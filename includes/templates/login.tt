@@ -1,0 +1,6 @@
+[% page_title = "Hardware Inventory System: Login" %]
+[% INCLUDE header.tt %]
+
+[% INCLUDE login_form.tt %]
+
+[% INCLUDE footer.tt %]

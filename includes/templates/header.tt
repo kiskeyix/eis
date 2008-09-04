@@ -1,0 +1,37 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+        <meta name="author" content="Luis Mondesi" />
+        <meta name="keywords" content="hardware, inventory, system" />
+        <meta name="description" content="An advanced hardware inventory. Information is kept on XML right into a SQL database using abstract classes to manage its representation on a GUI" />
+        <meta name="robots" content="all" />
+        [% IF redirect %]
+            [% IF action %]
+        <meta http-equiv="refresh" content="[% redirect %];url=[% action %]" />
+            [% ELSE %]
+        <meta http-equiv="refresh" content="[% redirect %]" />
+            [% END %]
+        [% END %]
+        <title>[% page_title %]</title>
+        <script type="text/javascript"></script>
+        <style type="text/css" title="currentStyle" media="screen">
+            @import "/eis/www/styles.css";
+        </style>
+        <!-- LINK rel="Shortcut Icon" type="image/x-icon" href="/eis/www/images/favicon.ico" / --> 
+        <link rel="alternate" type="application/rss+xml" title="RSS" href="/eis/Host?ft=RSS" />
+    </head>
+    <body>
+        <div id='container'>
+            <div id='menu_vertical'>
+                [% INCLUDE menu_list.tt %]
+            </div>
+            <div id='search'>
+                <form action='/eis/Search' method='post'>
+                    <p>
+                    <input type='text' name='search' title='Lookup hostname' />
+                    <input type='image' src='/eis/www/images/search.png' title='Search for hostnames, software or services' alt='Search' value='Search' style='vertical-align: middle;' /><br />
+                    <span class='lightsmalltext'>Wildchar: %</span>
+                    </p>
+                </form>
+            </div>

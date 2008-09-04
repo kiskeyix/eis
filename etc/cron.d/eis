@@ -1,0 +1,3 @@
+# vi: ft=crontab :
+MAILTO=root
+*/5 * * * * root /usr/local/bin/eis-import-all.sh

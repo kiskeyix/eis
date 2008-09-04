@@ -1,0 +1,10 @@
+Advanced search
+Authentication (against Active Directory)
+Administration interface (to add locations and place hosts in racks/datacenters, etc)
+Software installed on hosts as well as services running
+Automatically generated map of system dependencies (by location, by software services, etc..)
+Automate the process that collects information
+One-click (or wget source ?|/bin/sh) way to add systems to the database
+RSS feeds as systems get added
+API to allow other systems to tap into ours (right now the RAW XML can be seen by just doing ?&raw=1? on the /eis/Hosts container). These calls will be fully documented. (XMLRPC/Soap/CGI methods)
+

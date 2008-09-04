@@ -1,0 +1,17 @@
+<div id='loginform'>
+    <p class='lightsmalltext'>Active Directory Authentication</p>
+
+<form action='/eis/Login' method='post'>
+    <p>
+        User Name: <input name='username' type='text' class='username_field' title='Enter username: jdoe' /><br />
+        Password: <input name='password' type='password' class='password_field' title='Enter password' /><br />
+
+        Expire Session: 
+        <input type='radio' name='expire' value='900' checked="checked" />5 min
+        <input type='radio' name='expire' value='7200' />2 hours
+        <input type='radio' name='expire' value='31536000' />1 year
+        <br />
+        <input type='reset' class='resetbutton' /><input type='submit' value='Login' class='loginbutton' />
+    </p>
+</form>
+</div>

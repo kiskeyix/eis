@@ -1,0 +1,14 @@
+[% page_title %]
+[% INCLUDE header.tt %]
+
+<ul>
+    [% FOREACH q = queues %]
+    <li>
+        <a href="/eis/Review?q=[% q.id %]">
+            [% q.name %]
+        </a>
+    </li>
+    [% END %]
+</ul>
+
+[% INCLUDE footer.tt %]

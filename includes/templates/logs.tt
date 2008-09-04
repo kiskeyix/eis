@@ -1,0 +1,13 @@
+[% page_title = "Hardware Inventory System: Logs" %]
+[% INCLUDE header.tt %]
+
+<h1>[% note %]</h1>
+<div id='linkList'>
+    <hr />
+    [% FOREACH line = lines %]
+    <p class='log'><span style='font-weight: bold;'>[% line.date %]</span> [% line.log %]</p>
+    <hr />
+    [% END %]
+</div>
+
+[% INCLUDE footer.tt %]

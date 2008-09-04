@@ -1,0 +1,6 @@
+[% page_title = "Hardware Inventory System: Hosts" %]
+[% INCLUDE header.tt %]
+
+[% INCLUDE hosts_list.tt %]
+
+[% INCLUDE footer.tt %]

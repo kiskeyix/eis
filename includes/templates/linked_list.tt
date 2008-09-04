@@ -1,0 +1,5 @@
+<h1>[% note %]</h1>
+<div id='linkList'>
+    <p><a href='/eis/Info?id=[% host.id %]'>[% host.hostname %]</a></p>
+    [% html %]
+</div>

@@ -1,0 +1,13 @@
+[% page_title = "Hardware Inventory System: Users" %]
+[% INCLUDE header.tt %]
+
+<h1>[% note %]</h1>
+<div id='linkList'>
+    <ul>
+    [% FOREACH user = users %]
+    <li><a href='/eis/Users?id=[% user.id %]'>[% user.uname %]</a></li>
+    [% END %]
+    </ul>
+</div>
+
+[% INCLUDE footer.tt %]

@@ -1,0 +1,153 @@
+[% page_title = "Hardware Inventory System: Edit Host" %]
+[% INCLUDE header.tt %]
+
+<h1>[% note %]</h1>
+
+<form action='/eis/EditHost' method='post'>
+    <p><input type='hidden' name='id' value='[% host.id %]' /></p>
+    <table>
+        <tr>
+            <th>Editing</th>
+            <th><a href='/eis/Info?id=[% host.id %]'>[% host.hostname %]</a></th>
+        </tr>
+        <tr>
+            <td><b>Host Parent</b></td>
+            <td>
+                <p>
+                    <select name='hostparentid'>
+                    <option value='0'> -- </option>
+                    [% FOREACH parent = hostlist %]
+                        [% IF parent.id != host.id %]
+                        <option value='[% parent.id %]'[% IF parent.id == parenthost %] selected[% END %]>[% parent.hostname %]</option>
+                        [% END %]
+                    [% END %]
+                    </select>
+                    <input type='checkbox' title='Remove parent' name='delhostparentid' value='1' />
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Host Location</b></td>
+            <td>
+                <p>
+                    <select name='locationid'>
+                        <option value='0'> -- </option>
+                        [% FOREACH loc = loclist %]
+                            <option value='[% loc.id %]'[% IF loc.id == location %] selected[% END %]>[% loc.locname %] ([% loc.locdesc %])</option>
+                        [% END %]
+                    </select>
+                    <input type='checkbox' title='Remove location' name='dellocationid' value='1' />
+                </p>
+            </td>
+        </tr> 
+        <tr>
+            <td><b>Host IP</b></td>
+            <td>
+                <p>
+                    <input type='text' title='Host ip' name='ip' value='[% hostmeta.ip %]' />
+                    <span class='lightsmalltext'>Hostname Resolves to: [% currentip %]</span>
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Host IPv6</b></td>
+            <td>
+                <p>
+                    <input type='text' title='Host ipv6' name='ipv6' value='[% hostmeta.ipv6 %]' />
+                    <span class='lightsmalltext'>Hostname Resolves to: [% currentipv6 %]</span>
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Description</b></td>
+            <td>
+                <p>
+                    <textarea cols='20' rows='2' title='Description' name='description'>[% hostmeta.description %]</textarea>
+                </p>
+            </td>
+        </tr> 
+        <tr>
+            <td><b>Console</b></td>
+            <td>
+                <p>
+                    <input type='text' title='Console IP' name='console' value='[% hostmeta.console %]' />
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Application</b></td>
+            <td>
+                <p>
+                    <input type='text' title='Used by application' name='application' value='[% hostmeta.application %]' />
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Contract</b></td>
+            <td>
+                <p>
+                    <input type='text' title='Contract number' name='contract' value='[% hostmeta.contract %]' />
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Expires</b></td>
+            <td>
+                <p>
+                    <input type='text' title='Contract expiration' name='expires' value='[% hostmeta.expires %]' />
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Maintenance</b></td>
+            <td>
+                <p>
+                    <input type='text' title='Maintenance window' name='maintenance' value='[% hostmeta.maintenance %]' />
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Notes</b></td>
+            <td>
+                <p>
+                    <textarea cols='20' rows='2' title='Notes' name='notes'>[% hostmeta.notes %]</textarea>
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Owner</b></td>
+            <td>
+                <p>
+                    <input type='text' title='Owner' name='owner' value='[% hostmeta.owner %]' />
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Business Contact</b></td>
+            <td>
+                <p>
+                    <input type='text' title='Business Contact email or phone' name='businesscontact' value='[% hostmeta.businesscontact %]' />
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Technical Contact</b></td>
+            <td>
+                <p>
+                    <input type='text' title='Technical Contact email or phone' name='techcontact' value='[% hostmeta.techcontact %]' />
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Vendor Contact</b></td>
+            <td>
+                <p>
+                    <input type='text' title='Vendor Contact email or phone' name='vendorcontact' value='[% hostmeta.vendorcontact %]' />
+                </p>
+            </td>
+        </tr>
+    </table>
+    <p><input type='reset' /><input type='submit' value='Save' /></p>
+</form>
+
+[% INCLUDE footer.tt %]

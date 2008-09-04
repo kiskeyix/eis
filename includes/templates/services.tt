@@ -1,0 +1,6 @@
+[% page_title = "Hardware Inventory System: Services" %]
+[% INCLUDE header.tt %]
+
+[% INCLUDE linked_list.tt %]
+
+[% INCLUDE footer.tt %]

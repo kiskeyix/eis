@@ -1,0 +1,34 @@
+[% page_title = "Hardware Inventory System: Edit Location" %]
+[% INCLUDE header.tt %]
+
+<h1>[% note %]</h1>
+<div id='locationinfo'>
+    <table>
+        <tr>
+            <td><b>Location Name</b></td>
+            <td>
+            [% location.locname %]
+            </td>
+        </tr>
+        <tr>
+            <td><b>Description</b></td>
+            <td>
+                [% location.locdesc %]
+            </td>
+        </tr>
+        <tr>
+            <td><b>Location Parent</b></td>
+            <td>
+                [% IF parent %][% parent.locname %] ([% parent.locdesc %])[% ELSE %]&nbsp;[% END %]
+            </td>
+        </tr>
+    </table>
+</div>
+<h1>Do you want to delete this record?</h1>
+<form action='/eis/DeleteLocation' method='post'>
+<p>
+<input type='hidden' value='[% location.id %]' name='id' />
+<input type='submit' value='No' name='confirm' />
+<input type='submit' value='Yes' name='confirm' /></p>
+</form>
+[% INCLUDE footer.tt %]

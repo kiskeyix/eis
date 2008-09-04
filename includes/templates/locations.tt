@@ -1,0 +1,6 @@
+[% page_title = "Hardware Inventory System: Locations" %]
+[% INCLUDE header.tt %]
+
+[% INCLUDE location_list.tt %]
+
+[% INCLUDE footer.tt %]

@@ -1,0 +1,31 @@
+[% page_title = "Hardware Inventory System: Edit Location" %]
+[% INCLUDE header.tt %]
+
+<h1>[% note %]</h1>
+<div id='locationinfo'>
+    <table>
+        <tr>
+            <td><b>Location Name</b></td>
+            <td>
+            [% location.locname %]
+            </td>
+        </tr>
+        <tr>
+            <td><b>Description</b></td>
+            <td>
+                [% location.locdesc %]
+            </td>
+        </tr>
+        <tr>
+            <td><b>Location Parent</b></td>
+            <td>
+                [% IF parent %][% parent.locname %] ([% parent.locdesc %])[% ELSE %]&nbsp;[% END %]
+            </td>
+        </tr>
+    </table>
+    <p>
+    <a href='/eis/EditLocation?id=[% location.id %]'><img src='/eis/www/images/pencil.gif' title='Edit Location' alt='Edit location' style='border:0; padding-left: 100px;' /></a>
+    </p>
+</div>
+
+[% INCLUDE footer.tt %]

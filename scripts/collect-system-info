@@ -1,0 +1,715 @@
+#!/usr/bin/perl -w
+# $Revision: 1.47 $
+# $Date: 2007/04/13 18:47:09 $
+# Luis Mondesi < Luis.Mondesi@americanhm.com >
+#
+# DESCRIPTION: gathers system information and saves them to /tmp
+# USAGE: collect-system-info [--send] [REMOTE_HOST]
+# LICENSE: GPL
+# TODO: if IP is passed instead of HOSTNAME we need to figure out the real hostname
+
+=pod
+
+=head1 NAME
+
+collect-system-info - script to collect information from a host
+
+=head1 SYNOPSIS
+
+B<collect-system-info>  [-v,--version]
+                [-D,--debug] 
+                [-h,--help]
+                [-k,--key KEY]
+                [-q,--quiet]
+                [-s,--send-key]
+                [-u,--username USERNAME]
+                [HOSTNAME or FILE] [...]
+
+=head1 DESCRIPTION 
+
+    This script collects system information from a host by running the following commands and creating XML files for them:
+
+    - lshw -xml > /tmp/`hostname -s`-host.xml
+
+    - <rpm -qa|dpkg --list> > /tmp/`hostname -s`-software.xml
+
+    - get-list-services (collects from /etc/rc`runlevel`.d/S*, /etc/inetd.conf /etc/xinet.conf etc/xinet.d/* and `netstat -na | grep LISTEN`)
+
+=head1 OPTIONS
+
+=over 8
+
+=item -v,--version
+
+Prints version and exits
+
+=item -D,--debug
+
+Enables debug mode
+
+=item -h,--help
+
+Prints this help and exits
+
+=item -k,--key
+
+Use identity key KEY instead of default ~/.ssh/id_rsa
+
+=item -q,--quiet
+
+Do not print informational strings
+
+=item -s,--send-key
+
+Pushes local ~/.ssh/id_rsa.pub key to remote host ~/.ssh/authorized_keys file and exits
+
+=item -u,--username USER
+
+Connect to remote server using USER instead of the effective username
+
+=item HOSTNAME or FILE 
+
+Hostname or list of host names or ips from FILE to collect information from (via ssh). Defaults to localhost
+
+=back
+
+=cut
+
+use strict;
+use IO::Handle;
+STDOUT->autoflush(1);    # same as: $| = 1;
+STDERR->autoflush(1);
+use sigtrap qw(handler _exit_safe normal-signals error-signals);
+
+my $revision = "1.0";    # version
+
+$ENV{PATH} .= ":/usr/sbin:/usr/local/sbin";
+
+# standard Perl modules
+use Getopt::Long;
+Getopt::Long::Configure('bundling');
+use POSIX;               # cwd() ... man POSIX
+
+#use File::Spec::Functions qw/ catfile /;   # abs2rel() and other dir/filename specific
+use File::Basename;      # basename() && dirname()
+use Sys::Hostname qw/ hostname /;
+
+# globals:
+my %hosts = ();
+my @lsb_release =
+  ("/etc/redhat-release", "/etc/lsb-release", "/etc/debian_version");
+
+# Args:
+my $PVERSION = 0;
+my $HELP     = 0;
+my $DEBUG    = 0;
+my $VERBOSE  = 0;
+my $PKEY     = 0;
+my $PG_KEY   = "";  # when empty adds all for us... $ENV{'HOME'}."/.ssh/id_rsa";
+my $_ssh_agent = 0;       # should we kill ssh-agent when done?
+my $_ssh_id    = 0;       # should we remove id when done?
+my $ssh_port   = 22;
+my $HOST       = undef;
+my $USERNAME   = undef;
+my $QUIET      = 0;
+
+# get options
+GetOptions(
+
+    # flags
+    'v|version'  => \$PVERSION,
+    'h|help'     => \$HELP,
+    'D|debug'    => sub { $DEBUG++; $VERBOSE++ },
+    'V|verbose'  => \$VERBOSE,
+    's|send-key' => \$PKEY,
+    'q|quiet'    => \$QUIET,
+
+    # strings
+    'k|key=s'      => \$PG_KEY,
+    'u|username=s' => \$USERNAME,
+) and $HOST = shift;
+
+if ($HELP)
+{
+    use Pod::Usage;
+    pod2usage(1);
+    exit 0;
+}
+
+if ($PVERSION) { print STDOUT ($revision); exit 0; }
+
+my $RED   = "\033[1;31m";
+my $GREEN = "\033[0;32m";
+my $NORM  = "\033[0;39m";
+my $OS    = undef;
+
+# main ()
+my $SUDO = "";
+$HOST = _short_hostname(hostname()) if (not defined $HOST);
+
+if (defined($USERNAME))
+{
+    $USERNAME .= "\@" if ($USERNAME !~ /^\s*$/);
+}
+else
+{
+    warn(
+        "You are not running this as root, so 'sudo' will be used whenever possible. You can also use --username='root' to use the root account on the remote system.\n"
+    ) if ($> != 0 and $VERBOSE);
+    $USERNAME = "";         # avoids warning
+    $SUDO     = "sudo ";    # commands that need root will use sudo
+}
+
+# if we are dealing with a file, read its contents as hostnames || IPs to remote into
+if (-r $HOST)
+{
+    warn("Reading hosts from file $HOST\n");
+    open(FILE, "<", $HOST)
+      or warn("Failed to read file $HOST. $!\n");
+    while (<FILE>)
+    {
+        my @hosts = split(/\s+|\n/, $_);
+        foreach my $host (@hosts)
+        {
+            push(@ARGV, $host);   # if (is_alive($host)); # we check alive later
+        }
+    }
+    close(FILE);
+}
+
+foreach my $HOST ($HOST, @ARGV)
+{
+    print STDOUT (
+                 "Collecting information from " . _short_hostname($HOST) . "\n")
+      if ($VERBOSE and !-r $HOST);
+    if (is_alive($HOST))
+    {
+        if ($HOST !~ /^localhost/i
+            and _short_hostname($HOST) ne _short_hostname(hostname()))
+        {
+
+            # TODO prompt before generating a key
+            # generate RSA keys if none found. I don't care about people who use DSA :-P
+            system("ssh-keygen -t rsa -b 1024")
+              if (    !-f "$ENV{'HOME'}/.ssh/id_rsa.pub"
+                  and !-f $PG_KEY);
+
+            # attempts to use ssh-agent to load our keys
+            # setup SSH
+            if (!exists($ENV{'SSH_AUTH_SOCK'}))
+            {
+                _setup_ssh_agent();
+            }
+            if (!-S $ENV{'SSH_AUTH_SOCK'})
+            {
+                _setup_ssh_agent();
+            }
+
+            $_ssh_id = system("ssh-add -l > /dev/null");
+            if ($_ssh_id != 0)
+            {
+                system("ssh-add $PG_KEY")
+                  ;    # if $PG_KEY is blank ssh-add adds all private keys
+                if ($? != 0)
+                {
+                    warn(
+                        "Failed to authenticate. ssh-gent is not running? There is no valid private key? Hint: create a key with \`ssh-keygen -t rsa -b 1024\`. And then pass the key to us with: $0 --key $ENV{HOME}/.ssh/id_rsa\n"
+                    );
+                    if (
+                        prompt(
+                            "Do you want to continue? You will be prompted for each password needed [y/N] "
+                        ) !~ /^y/i
+                       )
+                    {
+                        _exit_safe(0, "Bail out as requested");
+                    }
+                }
+                $_ssh_id =
+                  1;    # we need to know that this agent should be killed later
+            }
+
+            # end setup SSH
+            # TODO find out a way on how to connect via ssh once and keep the session open
+            # send our public key over to the remove host so that we can login with no password
+            if ($PKEY)
+            {
+                open(KEY, "< $ENV{'HOME'}/.ssh/id_rsa.pub");
+                my $key = <KEY>;
+                close(KEY);
+                chomp($key);
+                $key =~ s/\S+\s+(\S+)\s+.*/$1/;
+                $key = "NO_KEY" if ($key =~ /^\s*$/);
+                $key =~ s/([\&\$\'\"\;\ ])/\\$1/g;    # escape shell chars
+                system("cat $ENV{'HOME'}/.ssh/id_rsa.pub | ssh "
+                    . $USERNAME
+                    . $HOST
+                    . " 'mkdir ~/.ssh 2> /dev/null && chmod 0700 ~/.ssh; grep -q $key ~/.ssh/authorized_keys 2> /dev/null || cat - >> ~/.ssh/authorized_keys; chmod 0644 ~/.ssh/authorized_keys'"
+                );
+                print STDERR (
+                       $RED . "failed to send key to $HOST. Aborting\n" . $NORM)
+                  and next
+                  if ($? != 0);
+            }
+        }
+
+        # 1. what OS is this host running?
+        my $_os_id = send_cmd($HOST, "lsb_release -i");
+        if ($? == 0)
+        {
+            $OS = _short_os_name($_os_id);
+        }
+        else
+        {
+            foreach my $file (@lsb_release)
+            {
+
+                # TODO use lsb_release to know the system distro
+                my $output = send_cmd($HOST, "cat $file 2>&1");
+                next
+                  if (!defined($output)
+                      or $output =~ /^\s*$|.*No such file.*/mig);
+                $OS = _short_os_name($output);
+                last
+                  if ($OS ne "unknown");
+            }
+        }
+
+        # get the architecture of the remove host:
+        my $ARCH = send_cmd($HOST, "uname -m 2>/dev/null");
+        _exit_safe(1, "Could not get architecture information for $HOST")
+          if (!$ARCH);
+        $ARCH =~ s/\r|\n//g;
+
+        # sanity check
+        die("We do not support the distribution on $HOST: $OS ($ARCH)\n")
+          if ($OS eq "unknown");
+
+        print_info("$HOST is $OS ($ARCH)");
+
+        # 2. collect hardware information
+        my $tmp_dir = "/tmp";
+        send_cmd($HOST, "test -d $tmp_dir || mkdir $tmp_dir 2> /dev/null");
+
+        send_cmd($HOST, "which lshw > /dev/null 2>&1");
+        my $_lshw_path = "";
+
+        if ($? != 0)
+        {
+
+            # we keep one static binary that works for 64 as well as 32bit
+            if ($HOST !~ /^localhost/
+                and _short_hostname($HOST) ne _short_hostname(hostname()))
+            {
+
+                my $_arch =
+                  ($ARCH =~ /i\d86/ or $ARCH =~ /86_64/) ? "ix86" : $ARCH;
+
+                # good, we are going to a remote host. Check whether there is a local
+                # copy of lshw that can be used remotely
+                _exit_safe(
+                    1,
+                    "Remote host does not have lshw installed and we can't copy our local copy from ./bin/lshw-static.linux.$_arch.gz\n"
+                ) if (!-f "bin/lshw-static.linux.$_arch.gz");
+
+                # copy our local binary to the remote host
+                system(
+                    "zcat bin/lshw-static.linux.$_arch.gz | ssh ${USERNAME}${HOST} 'cat - > $tmp_dir/lshw; chmod a+rx $tmp_dir/lshw'"
+                );
+                _exit_safe(1, "Could not copy bin/lshw to $HOST\n")
+                  if ($? != 0);
+
+                # use lshw from new path
+                $_lshw_path = "$tmp_dir/";
+            }
+        }
+
+        # TODO we need to test whether we can do sudo commands without being prompted or a password!
+        my $_old_username = $USERNAME; # needed because we have problems with Suse
+        if ($OS eq "Suse")
+        {
+            print STDERR (
+                "Cannot run lshw as root on Suse systems (Try running /tmp/lshw or lshw as root locally)\nReseting\n"
+            );
+            $SUDO     = "";
+            $USERNAME = "";
+            print STDERR ("Press CTRL+C to exit if something goes wrong...\n");
+        }
+        my $_hw_str =
+          send_cmd($HOST, "$SUDO ${_lshw_path}lshw -xml 2> /dev/null");
+        _exit_safe(1, "Could not collect hardware information\n")
+          if (!$_hw_str);
+
+        $_hw_str = _clean_xml($_hw_str);
+
+        open(HW, ">" . _short_hostname($HOST) . "-hardware.xml");
+        print HW ($_hw_str);
+        close(HW);
+       
+        # restore username
+        if ($OS eq "Suse")
+        {
+            $USERNAME = $_old_username;
+        }
+
+        # 3. collect software information
+        my $_sw_xml = "";
+        if ($OS ne "Debian")    # TODO and we use RPMs
+        {
+            my $_sw_str = send_cmd($HOST,
+                  "rpm -qa --qf '\%{NAME}///\%{VERSION}///\%{DESCRIPTION}xxx'");
+            _exit_safe(1,
+                  "Couldn't collect software information for $HOST on $tmp_dir")
+              if ($? != 0);
+            $_sw_xml = _software_to_xml($HOST, 'rpm', $_sw_str);
+        }
+        elsif ($OS eq "Debian")
+        {
+            my $_sw_str = send_cmd($HOST, "dpkg --list | grep 'ii'");
+            $_sw_xml = _software_to_xml($HOST, 'dpkg', $_sw_str);
+        }
+        else
+        {
+            die("What is this $OS?\n");
+        }
+        open(SW, ">" . _short_hostname($HOST) . "-software.xml");
+        print SW ($_sw_xml);
+        close(SW);
+
+        # 4. collect service information
+        my $_sr_str = send_cmd($HOST, "netstat -nptul");
+        if ($_sr_str)
+        {
+            my $_sr_xml = _netstat_to_xml($HOST, $_sr_str);
+            open(SR, ">" . _short_hostname($HOST) . "-service.xml");
+            print SR ($_sr_xml);
+            close(SR);
+        }
+    }
+    else
+    {
+        print_error("Could not connect to host $HOST")
+          if (!-r $HOST);
+    }
+}
+
+# helper functions #
+sub _software_to_xml
+{
+    my $host = shift;
+    my $type = shift;
+    my $str  = shift;
+    my $_regex =
+      ($type eq 'dpkg')
+      ? '^\s*ii\s+([^[:space:]]+)\s+([^[:space:]]+)\s+(.*)\s*'
+      : '^\s*([[:print:]]+)\/\/\/([[:print:]]+)\/\/\/([[:print:]]+)';
+
+    # when running this script remotely (over ssh) the new-lines are
+    # removed for some lines. We use ... as line separator instead
+    my $_split_regex = ($type eq 'dpkg') ? "\n" : 'xxx';
+
+    my $_xml = "<?xml version=\"1.0\" standalone=\"yes\" ?>\n";
+    $_xml .= "<node id=\"" . _short_hostname($host) . "\">\n";
+
+    #my $i=0;
+    foreach my $line (split(/$_split_regex/, $str))
+    {
+        chomp($line);
+        $line =~ s/\r//;
+
+        next if ($line =~ /^\s*$/);
+        if ($line =~ /$_regex/)
+        {
+            next if (not $2);
+
+            my $_pkg  = $1;
+            my $_ver  = $2;
+            my $_desc = $3;
+
+            $_pkg =~ s/[<>"']//g if ($_pkg);
+            $_ver =~ s/[<>"']//g if ($_ver);
+
+            if ($3)
+            {
+
+                # limit description to 64 characters (61+...)
+                $_desc =
+                  (length($_desc) > 64)
+                  ? substr($_desc, 0, 61) . "..."
+                  : $_desc;
+                $_desc =~ s/\b\]\]\>\b//;    # CDATA cannot contain ']]>'
+                $_xml .=
+                  "<package id=\"$_pkg\"><version>$_ver</version><desc><![CDATA[$_desc]]></desc></package>\n";
+            }
+            else
+            {
+                $_xml .=
+                  "<package id=\"$_pkg\"><version>$_ver</version><desc></desc></package>\n";
+            }
+        }
+    }
+    $_xml .= "</node>\n";
+    return $_xml;
+}
+
+sub _netstat_to_xml
+{
+    my $host = shift;
+    my $str  = shift;
+    my $_xml = "<?xml version=\"1.0\" standalone=\"yes\" ?>";
+    $_xml .= "<node id=\"" . _short_hostname($host) . "\">";
+    foreach my $line (split(/\n/, $str))
+    {
+        chomp($line);
+        $line =~ s/\r//;
+        if ($line =~
+            /(tcp\d*|udp\d*)\s+\d+\s+\d+\s+([0-9\.\:\*]+)\s+(?:[0-9\.\:\*]+)\s+(?:LISTEN)*\s+([^[:space:]]+)\s*/
+           )
+        {
+            my @_service = split(/:+/, $2);    # fixes IPv6 :::N
+            $_xml .=
+              "<service id='$_service[-1]'><proto>$1</proto><listenip>$2</listenip><program>$3</program></service>";
+        }
+    }
+    $_xml .= "</node>";
+    return $_xml;
+}
+
+sub _short_hostname
+{
+    my $host = shift;
+    my @_str = split(/\./, $host);
+    return ($host =~ /(?:\d+\.\d+\.\d+\.\d+|\:)/) ? $host : $_str[0];
+}
+
+# return filehandle for stdout/stderr of command send to $host over ssh
+sub send_cmd
+{
+    my $host = shift;
+    my $cmd  = shift;
+    return undef if (not defined $host or not defined $cmd);
+
+    # -t forces pseudo terminal (pty)
+    my $_cmd =
+      ($host ne 'localhost'
+        and _short_hostname($host) ne _short_hostname(hostname()))
+      ? "ssh -nqt ${USERNAME}${host} $cmd 2>&1"
+      : $cmd;
+    print STDOUT ("$_cmd\n") if ($VERBOSE);
+    my $str = qx/$_cmd/;
+    if ($? != 0)
+    {
+
+        unless ($QUIET)
+        {
+            print_error("Failed to execute $cmd on $host. $str");
+        }
+        return undef;
+    }
+    return $str;
+}
+
+# @desc checks whether a given host is alive by pinging it.
+#  pinging to a given host will be cached/saved for us so that we don't
+#  have to test for a given host more than once.
+# @arg 1 $host string or ip representing a given host
+# @return 1 if true 0 if false
+sub is_alive
+{
+    my $host = shift;
+    return undef if (not defined($host));
+    if ($host eq 'localhost'
+        or _short_hostname($host) eq _short_hostname(hostname()))
+    {
+        $hosts{$host}{'alive'} = 1;
+        return 1;
+    }
+    $hosts{$host}{'alive'} = 0 if (not exists($hosts{$host}{'alive'}));
+    my $ping_args = (qx/ping -V/ =~ /iputils/) ? " -w 4 " : "";
+    if ($hosts{$host}{'alive'} == 0)
+    {
+        my $tmp_str = undef;
+        $tmp_str = qx/ping $ping_args -c 1 $host/
+          if ($hosts{$host}{'alive'} < 1);
+
+        # 0 when good
+        # 256 when not good
+        debug("*** pinging $host returned $?");
+
+        # return the opposite of ping's return output
+        $hosts{$host}{'alive'} = ($?) ? 0 : 1;
+        if ($hosts{$host}{'alive'} > 0)
+        {
+
+            # test to see if host is listening on SSH port
+            use IO::Socket;
+            my $socket =
+              IO::Socket::INET->new(
+                                    PeerAddr => $host,
+                                    PeerPort => $ssh_port,
+                                    Proto    => "tcp",
+                                    Type     => SOCK_STREAM
+                                   );
+            if (!$socket)
+            {
+                debug(
+                    "*** couldn't connect to remove host ssh port $ssh_port. $@\n"
+                );
+                $hosts{$host}{'alive'} = 0;
+            }
+            else
+            {
+                debug("*** ssh to $host on port $ssh_port is possible");
+                close($socket);
+            }
+        }
+    }
+    else
+    {
+        debug(
+            "*** uh? We should never reach this... This means that we previously check for this host already. All checks were skipped."
+        );
+    }
+    debug("is_alive returning " . $hosts{$host}{'alive'} . " for $host");
+    return $hosts{$host}{'alive'};
+}
+
+sub prompt
+{
+
+    #@param 0 string := question to prompt
+    #returns answer
+    print STDOUT "@_";
+    my $rep = <STDIN>;
+    chomp($rep);
+    return $rep;
+}
+
+sub _setup_ssh_agent
+{
+    $ENV{'SSH_AUTH_SOCK'} = "";
+    my $_ssh_agent_env = qx/ssh-agent -s/;
+    print_error($_ssh_agent_env, "\n") if ($DEBUG);
+    $_ssh_agent_env =~ m/SSH_AUTH_SOCK=(.*); /gmi;
+    $ENV{'SSH_AUTH_SOCK'} = $1;
+    $_ssh_agent_env =~ m/SSH_AGENT_PID=(.*); /gmi;
+    $ENV{'SSH_AGENT_PID'} = $1;
+
+    if (-S $ENV{'SSH_AUTH_SOCK'})
+    {
+        $_ssh_agent = 1;    # we should kill the agent when done
+    }
+    else
+    {
+        warn("Could not launch our ssh-agent\n");
+    }
+}
+
+sub _exit_safe
+{
+    my $status = shift;
+    my $msg    = shift;
+    $status = 0 if (not defined($status));
+    if ($_ssh_id == 1)
+    {
+        print("Removing ssh identities from ssh-agent\n");
+        system("ssh-add -D");    # delete identities
+    }
+
+    if ($_ssh_agent == 1)
+    {
+        print("Killing our ssh-agent process\n");
+        kill(15, $ENV{'SSH_AGENT_PID'});
+    }
+    if (defined $msg)
+    {
+        if ($status)
+        {
+            print_error($msg);
+        }
+        else
+        {
+            print_info($msg);
+        }
+    }
+    exit $status;
+}
+
+sub print_error
+{
+    unless ($QUIET)
+    {
+        print STDERR ($RED . "@_" . $NORM . "\n");
+    }
+}
+
+sub print_info
+{
+    unless ($QUIET)
+    {
+        print STDOUT ($GREEN . "@_" . $NORM . "\n");
+    }
+}
+
+# @desc prints colored messages
+sub debug
+{
+    my $msg = "@_";
+    print STDERR ("$RED $msg $NORM\n") if ($DEBUG);
+}
+
+# helper to return a predictable string of supported distros
+sub _short_os_name
+{
+    my $str = shift;
+    my $OS  = "unknown";
+    if ($str =~ /Fedora Core release/mig)
+    {
+        $OS = "Fedora";
+    }
+    elsif ($str =~ /Red Hat .* Linux .* release/mig)
+    {
+        $OS = "Redhat";
+    }
+    elsif ($str =~ /CentOS release/mig)
+    {
+        $OS = "Centos";
+    }
+    elsif ($str =~ /SUSE/mig)
+    {
+        $OS = "Suse";
+    }
+    elsif ($str =~ /Ubuntu|Xandros|Debian/mig)
+    {
+        $OS = "Debian";
+    }
+    return $OS;
+}
+
+# TODO this function could skip TEXT fields like:
+# <foo>
+#   foo text
+# </foo>
+# We are assuming that the format of lshw -xml always starts with a tag
+# <foo>foo text</foo>
+sub _clean_xml
+{
+    my $xml = shift;
+    my @_ret = ();
+    foreach(split(/\n|\r/,$xml))
+    {
+        next if /^\s*$/; # skip blank lines
+        next if $_ !~ /^\s*<.*$/; # skip lines not starting with xml opening tag <
+        $_ =~ s/[^[:print:]]//g;  # sometimes binary data is included in lshw output
+        push(@_ret,$_);
+    }
+    return(join("\n",@_ret))
+}
+
+__END__
+
+=head1 AUTHORS
+
+Luis Mondesi <luis.mondesi@americanhm.com>
+
+=cut
+

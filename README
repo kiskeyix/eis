@@ -1,0 +1,16 @@
+Luis Mondesi <lemsx1@gmail.com> 
+2008-07-18 11:41 EDT 
+
+This is a hardware inventory application that stands the tests of time.
+It allows systems to be linked with others and keeps track of the applications running on them.
+
+Requirements:
+
+Template Toolkit
+Class::DBI
+Class::DBI::mysql
+AppConfig (part of Template Toolkit)
+Net::LDAP
+XML::LibXML
+XML::LibXSLT
+Digest::MD5

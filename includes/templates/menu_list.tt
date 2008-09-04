@@ -1,0 +1,22 @@
+    <ul>
+        <li>
+            <a href='/eis/Hosts'>Hosts</a>
+        </li>
+
+        <li>
+            <a href='/eis/Locations'>Locations</a>
+        </li>
+
+        <li>
+            <a href='/eis/Users'>Users</a>
+        </li>
+
+        <li>
+            <a href='/eis/Logs'>Logs</a>
+        </li>
+
+        <li>
+            <a href='/eis/Logout'>Logout</a>
+        </li>
+
+    </ul>

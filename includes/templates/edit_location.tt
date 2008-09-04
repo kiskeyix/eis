@@ -1,0 +1,42 @@
+[% page_title = "Hardware Inventory System: Edit Location" %]
+[% INCLUDE header.tt %]
+
+<h1>[% note %]</h1>
+
+<form action='/eis/[% IF action %][% action %][% ELSE %]EditLocation[% END %]' method='post'>
+    <input type='hidden' name='id' value='[% location.id %]' />
+    <table>
+        <tr>
+            <th>&nbsp;</th>
+            <th><a href='/eis/Locations?id=[% location.id %]'>[% location.locname %]</a></th>
+        </tr>
+        <tr>
+            <td><b>Location Name</b> (*)</td>
+            <td>
+            <input type='text' name='locname' value='[% location.locname %]' />
+            </td>
+        </tr>
+        <tr>
+            <td style='vertical-align: top'><b>Description</b> (*)</td>
+            <td>
+                <textarea cols='20' rows='4' name='locdesc'>[% location.locdesc %]</textarea>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Location Parent</b></td>
+            <td>
+                <select name='locparentid'>
+                <option value='0'> -- </option>
+                [% FOREACH loc = loclist %]
+                    [% IF loc.id != location.id %]
+                    <option value='[% loc.id %]'[% IF loc.id == locparent.locparentid %]selected[% END %]>[% loc.locname %] ([% loc.locdesc %])</option>
+                    [% END %]
+                [% END %]
+                </select>
+            </td>
+        </tr>
+    </table>
+    <p><input type='reset' /><input type='submit' value='Save' /></p>
+</form>
+<p class='smalltext'>(*) required</p>
+[% INCLUDE footer.tt %]

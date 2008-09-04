@@ -1,0 +1,29 @@
+[% page_title = "Hardware Inventory System: Host Information " %]
+[% INCLUDE header.tt %]
+
+[% IF meta.id %]
+<div id='hostmeta'>
+<table>
+    [% IF parenthost.hostparentid %]<tr><td><b>Host Parent</b></td><td>[% parenthost.hostparentid.hostname %]</td></tr>[% END %]
+    [% IF location.locationid %]<tr><td><b>Host Location</b></td><td><a href='/eis/Locations?id=[% location.locationid %]' title='[% location.locationid.locdesc %]'>[% location.locationid.locname %]</a></td></tr>[% END %]
+    <tr><td><b>IP</b></td><td>[% meta.ip %]</td></tr>
+    <tr><td><b>IPv6</b></td><td>[% meta.ipv6 %]</td></tr>
+    <tr><td><b>Console</b></td><td>[% meta.console %]</td></tr>
+    <tr><td><b>Description</b></td><td>[% meta.description %]</td></tr>
+    <tr><td><b>Owner</b></td><td>[% meta.owner %]</td></tr>
+    <tr><td><b>Application</b></td><td>[% meta.application %]</td></tr>
+    <tr><td><b>Contract</b></td><td>[% meta.contract %]</td></tr>
+    <tr><td><b>Expires</b></td><td>[% meta.expires %]</td></tr>
+    <tr><td><b>Maintenance</b></td><td>[% meta.maintenance %]</td></tr>
+    <tr><td><b>Business Contact</b></td><td>[% meta.businesscontact %]</td></tr>
+    <tr><td><b>Technical Contact</b></td><td>[% meta.techcontact %]</td></tr>
+    <tr><td><b>Vendor Contact</b></td><td>[% meta.vendorcontact %]</td></tr>
+    <tr><td><b>Notes</b></td><td>[% meta.notes %]</td></tr>
+</table>
+<p><a href='/eis/Edit?id=[% id %]'><img src='/eis/www/images/pencil.gif' title='Edit host' alt='Edit host' style='border: 0;' /></a></p>
+</div>
+[% END %]
+
+[% host %]
+
+[% INCLUDE footer.tt %]

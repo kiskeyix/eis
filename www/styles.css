@@ -1,0 +1,451 @@
+/* Expanded css Zen Garden default style v1.01 */
+/* css released under Creative Commons License - http://creativecommons.org/licenses/by-nc-sa/1.0/  */
+
+
+/* This file based on 'Tranquille' by Dave Shea */
+/* You may use this file as a foundation for any new work, but you may find it easier to start from scratch. */
+/* Not all elements are defined in this file, so you'll most likely want to refer to the xhtml as well. */
+
+/* Images should be linked as if the CSS file sits in the same folder as the images. ie. no paths. */
+
+
+/* basic elements */
+body { 
+	font: 8pt/16pt arial; 
+	color: #555753; 
+	background: #fff url(images/bg.gif) repeat-x; 
+	margin: 0px;
+        padding: 0px;
+        height: 8.5in;
+	}
+p { 
+	font: 8pt/16pt arial; 
+	margin-top: 0px; 
+	text-align: justify;
+	}
+h3 { 
+	font: italic normal 12pt arial; 
+	letter-spacing: 1px; 
+	margin-bottom: 0px; 
+	color: #7D775C;
+	}
+
+a { 
+        text-decoration:none;
+        font-weight:700;
+	}
+a:link,a:active,a:visited { 
+        color: #988F5E;
+	}
+/* old visited  color: #B3AE94;*/
+a:hover {
+        color:#ABD550;
+        }
+
+/* specific divs */
+#container { 
+        position: absolute;
+        top: 10px;
+        left: 10em;
+        right: 0;
+        width: auto;
+        height: 1500px;
+        bottom: 100px;
+	background: url(images/hw.png);
+        background-repeat: no-repeat;
+        background-position: 70% 10%; 
+        background-attachment: fixed;
+        text-align: left;
+	padding-top: 100px;
+        padding-left: 10px;
+	margin: 5px auto; 
+	}
+
+#intro { 
+	min-width: 470px;
+	}
+#pageHeader { 
+	margin-bottom: 20px;
+	}
+
+/* using an image to replace text in an h1. This trick courtesy Douglas Bowman, http://www.stopdesign.com/articles/css/replace-text/ */
+#pageHeader h1 { 
+	background: transparent url(images/h1.gif) no-repeat top left; 
+	margin-top: 10px; 
+	width: 219px; 
+	height: 87px; 
+	float: left;
+	}
+#pageHeader h1 span {
+	display:none
+	}
+#pageHeader h2 { 
+	background: transparent url(images/h2.gif) no-repeat top left; 
+	margin-top: 58px; 
+	margin-bottom: 40px; 
+	width: 200px; 
+	height: 18px; 
+	float: right;
+	}
+#pageHeader h2 span {
+	display:none;
+	}
+
+#quickSummary {
+	clear:both; 
+	margin: 20px 20px 20px 10px; 
+	width: 160px; 
+	float: left;
+	}
+#quickSummary p {
+	font: italic 10pt/22pt arial; 
+	text-align:center;
+	}
+
+#preamble {
+	clear: right; 
+	padding: 0px 10px 0px 10px;
+	}
+#supportingText {
+	padding-left: 10px; 
+	margin-bottom: 40px;
+	}
+
+#footer { 
+	text-align: center; 
+	}
+#footer a:link, #footer a:visited { 
+	margin-right: 20px; 
+	}
+
+#linkList {
+	margin-left: auto; 
+        margin-right: auto; 
+	position: relative; 
+	}
+
+#linkList2 {
+	margin-left: auto; 
+        margin-right: auto; 
+	position: relative; 
+	}
+
+/*#linkList2 { 
+	font: 10px verdana, sans-serif; 
+	background: transparent url(images/bg.gif) top left repeat-y; 
+	padding: 10px; 
+	margin-top: 150px; 
+	width: 130px; 
+	}*/
+
+#menu_horizontal {
+        display: block;
+        margin-left: 250px;
+	}
+
+#menu_horizontal ul {	
+	padding: 0px;
+        white-space: nowrap;
+	}
+#menu_horizontal li {
+	list-style-type: none;
+	display: inline;
+        margin-right: 5px;
+        margin-left: 5px;
+        padding-left: 20px;
+        padding-right: 20px;
+        border: blue 1px solid;
+        background: #aa7;
+        font-size: small;
+        color: white;
+	}
+#menu_horizontal li a:link {
+        color: white;
+        }
+#menu_horizontal li a:visited {
+        color: white;
+        }
+
+#menu_vertical {
+        position: fixed;
+        width: 10em;
+        height: auto;
+        top: 105px;
+        right: auto;
+        bottom: 100px;
+        left: 0;
+	}
+#menu_vertical ul {	
+        margin: 0px;
+	padding: 0px;
+        white-space: nowrap;
+	}
+#menu_vertical li {
+	list-style-type: none;
+        margin-top: 5px;
+        margin-bottom: 5px;
+        padding-left: 20px;
+        padding-right: 20px;
+        border: blue 1px solid;
+        background: #aa7;
+        font-size: small;
+        color: white;
+	}
+#menu_vertical li a:link {
+        color: white;
+        }
+#menu_vertical li a:visited {
+        color: white;
+        }
+
+#linkList h3.select { 
+	background: transparent url(images/h3.gif) no-repeat top left; 
+	margin: 10px 0px 5px 0px; 
+	width: 97px; 
+	height: 16px; 
+	}
+#linkList h3.select span {
+	display:none
+	}
+#linkList h3.favorites { 
+	background: transparent url(images/h4.gif) no-repeat top left; 
+	margin: 25px 0px 5px 0px; 
+	width: 60px; 
+	height: 18px; 
+	}
+#linkList h3.favorites span {
+	display:none
+	}
+#linkList h3.archives { 
+	background: transparent url(images/h5.gif) no-repeat top left; 
+	margin: 25px 0px 5px 0px; 
+	width:57px; 
+	height: 14px; 
+	}
+#linkList h3.archives span {
+	display:none
+	}
+#linkList h3.resources { 
+	background: transparent url(images/h6.gif) no-repeat top left; 
+	margin: 25px 0px 5px 0px; 
+	width:63px; 
+	height: 10px; 
+	}
+#linkList h3.resources span {
+	display:none
+	}
+
+#linkList a {
+        text-transform:uppercase;
+}
+
+#linkList ul {
+	margin: 0px;
+	padding: 0px;
+	}
+#linkList li {
+	line-height: 4ex;
+	list-style-type: none;
+	background: transparent url(images/system.png) no-repeat;
+	display: block;
+        padding-left: 50px; 
+	padding-top: 5px; 
+	margin-bottom: 5px;
+	}
+#linkList li a:link { 
+	color: #988F5E;
+	}
+#linkList li a:visited {
+        color: #988F5E;
+	}
+	
+#linkList2 ul {
+	margin: 0px;
+	padding: 0px;
+	}
+#linkList2 li {
+	list-style-type: none;
+	background: transparent url(images/location.png) no-repeat;
+	display: block;
+        padding-left: 50px; 
+	padding-top: 5px; 
+	margin-bottom: 5px;
+	}
+#linkList2 li a:link { 
+	color: #988F5E;
+	}
+#linkList2 li a:visited {
+	color: #988F5E;
+	}
+
+#extraDiv1 { 
+	background: transparent url(images/cr2.gif) top left no-repeat; 
+	position: absolute; 
+	top: 40px; 
+	right: 0px; 
+	width: 148px; 
+	height: 110px; 
+	}
+
+/* HIS specific styles */
+
+/* containers */
+#hostlist {
+        margin-left: 30px;
+        border: #7090A6 2px dashed;
+        padding: 25px;
+        width: 310px;
+}
+
+#hostlist a {
+        text-transform:uppercase;
+}
+
+#locationlist {
+        margin-left: 30px;
+        border: #7090A6 2px dashed;
+        padding: 25px;
+        width: 400px;
+}
+
+#loginform {
+        margin-top: 15px;
+        margin-left: 30px;
+        border: #7090A6 2px dashed;
+        padding: 25px;
+        width: 270px;
+}
+
+#loginform input {
+    border: #000 1px solid;
+}
+
+#loginform input.username_field {
+    margin-left: 3px;
+    margin-top: 3px;
+    margin-bottom: 3px;
+    margin-right: 0px;
+}
+
+#loginform input.password_field {
+    margin-left: 3px;
+    margin-top: 3px;
+    margin-bottom: 3px;
+    margin-right: 0px;
+}
+
+#loginform input.resetbutton {
+    margin: 3px;
+    margin-left: 100px;
+}
+
+#loginform input.loginbutton {
+    margin: 3px;
+}
+
+div.hostinfo {
+        margin-top: 15px;
+        margin-left: 30px;
+        border: #7090A6 2px dashed;
+        padding: 25px;
+        width: 400px;
+}
+
+div.extra {
+        background: lightyellow;
+        padding-left: 1px;
+        padding-right: 5px;
+	color: black;
+}
+
+div.cpu {
+        background: #CCFFFF;
+        border: #7090A6 2px solid;
+}
+
+div.memory {
+        background: #CCCCFF;
+        border: #7090A6 2px solid;
+}
+
+div.cache {
+}
+
+div.firmware {
+}
+
+div.capabilities {
+        border: red 1px dashed;
+	color: black;
+}
+
+#error {
+        margin-top: 15px;
+        margin-left: 30px;
+        margin-right: 70%;
+        background: white;
+        border: red 3px solid;
+        padding: 25px;
+        font-weight: bold;
+}
+
+#success {
+        margin-top: 15px;
+        margin-left: 30px;
+        margin-right: 70%;
+        background: white;
+        border: green 3px solid;
+        padding: 25px;
+        font-weight: bold;
+}
+
+#search {
+	position: absolute; 
+	top: 0px; 
+	right: 10%;
+}
+
+#validbox {
+	position: fixed; 
+	bottom: 5px; 
+	right: 10%;
+}
+
+#hostmeta {
+        position: fixed;
+        display: block;
+        right: 10%;
+        margin-top: 0px;
+	}
+
+/* general classes */
+.description {
+        background: #000000;
+        padding-left: 25px;
+        padding-right: 25px;
+	color: white;
+        font-weight: bold;
+}
+
+.hostname {
+        background: green;
+        border: green 1px dashed;
+        text-align: center;
+        margin: 5px auto;
+        padding-left: 15px;
+        padding-right: 15px;
+        font: 8pt/16pt arial; 
+	color: white;
+        font-weight: bold;
+        text-transform:uppercase;
+}
+
+.smalltext {
+    font: normal 8pt arial; 
+}
+
+.lightsmalltext {
+    font: normal 8pt arial; 
+    color: #cecece;
+}
+

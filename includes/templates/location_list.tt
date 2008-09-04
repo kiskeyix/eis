@@ -1,0 +1,26 @@
+<h1>[% note %]</h1> 
+<div id='locationlist'>
+    <table>
+    <tr>
+        <th colspan='4' style='text-align: right;'>
+                <a href='/eis/EditLocation'><img src='/eis/www/images/add.png' alt='Add new location' title='Add new location' style='vertical-align: middle; border:0;' /></a>
+        </th>
+    </tr>
+    [% FOREACH loc = locations %]
+      <tr>
+        <td style='padding-right: 100px;'>
+            <a href='/eis/Locations?id=[% loc.id %]' title='Location information'>[% loc.locname %] ([% loc.locdesc %])</a>
+        </td>
+        <td>
+            <a href='/eis/Locations?id=[% loc.id %]'><img src='/eis/www/images/location.png' alt='Location information' title='Location information' style='vertical-align: middle; border:0;' /></a>
+        </td>
+        <td>
+            <a href='/eis/EditLocation?id=[% loc.id %]'><img src='/eis/www/images/pencil.gif' alt='Edit location' title='Edit location' style='vertical-align: middle; border:0;' /></a>
+        </td> 
+        <td>
+            <a href='/eis/DeleteLocation?id=[% loc.id %]'><img src='/eis/www/images/remove.png' alt='Delete location' title='Delete location' style='vertical-align: middle; border:0;' /></a>
+        </td>
+      </tr>
+    [% END %]
+    </table>
+</div>

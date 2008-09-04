@@ -1,0 +1,26 @@
+<div id='hostlist'>
+    <h1>[% note %]</h1>
+    <table>
+    [% FOREACH host = hosts %]
+    [% host_id = (software or service) ? host.host : host.id %]
+    [% host_name = (software or service) ? (host.host.hostname) ? host.host.hostname : "Unknown hostname" : host.hostname %]
+      <tr>
+        <td style='padding-right: 100px;'>
+            <a href='/eis/Info?id=[% host_id %]'>[% host_name %]</a>
+        </td>
+        <td>
+            <a href='/eis/Info?id=[% host_id %]'><img src='/eis/www/images/system.png' alt='System information' title='System information' style='vertical-align: middle; border:0;' /></a>
+        </td>
+        <td>
+            <a href='/eis/Edit?id=[% host_id %]'><img src='/eis/www/images/pencil.gif' alt='Edit host' title='Edit host' style='vertical-align: middle; border:0;' /></a>
+        </td>
+        <td>
+            <a href='/eis/Software?id=[% host_id %]'><img src='/eis/www/images/software.png' alt='Software list' title='Software list' style='vertical-align: middle; border:0;' /></a>
+        </td>
+        <td>
+            <a href='/eis/Services?id=[% host_id %]'><img src='/eis/www/images/network.png' alt='Service list' title='Service list' style='vertical-align: middle; border:0;' /></a>
+        </td>
+      </tr>
+    [% END %]
+    </table>
+</div>
