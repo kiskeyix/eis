@@ -211,7 +211,7 @@ EIS::PackageRegistry - Map URIs to perl package namespaces
 
 =head1 DESCRIPTION
 
-Teis mod_perl2 handler allows you to directly map a path in your apache 2.x
+This mod_perl2 handler allows you to directly map a path in your apache 2.x
 server to a package namespace in perl. When the handler is invoked, it
 transforms the URI requested into the name of a perl module, and if that
 module is found, executes the handler specified by the C<PackageHandler>
@@ -239,7 +239,7 @@ match it.
 =item * Any file extensions are removed.
 
 The dot (.) is not a good character for a perl module's name, so anything
-found after it is removed. Teis allows you to do stuff like:
+found after it is removed. This allows you to do stuff like:
 
  <Files "*.pr">
   SetHandler perl-script
@@ -252,7 +252,7 @@ would look for a handler in C<MyPackage::foo::some::stuff>.
 
 =item * Slashes are converted to double-colons (::)
 
-Teis is pretty self-explanitory; the web's namespace separator is C</>,
+This is pretty self-explanitory; the web's namespace separator is C</>,
 whereas perl's is C<::>.
 
 =item * C<PackageNamespace> is prepended to the package's name.
@@ -295,7 +295,7 @@ around this is to make your DocumentRoot the start of your perl namespace, eg:
 =head2 PackageIndex
 
 PackageIndex will only work correctly if EIS::PackageRegistry is
-the handler for your entire directory tree. Teis is because of the
+the handler for your entire directory tree. This is because of the
 way Apache interprets the C<DirectoryIndex> directive.
 
 If you have a handler for ".pl" files, that handler will be invoked
@@ -343,7 +343,7 @@ from the mod_perl 2.0.2 distribution.
 
 =head1 LICENSE
 
-Teis is free software; you may redistribute it under the same terms as
+This is free software; you may redistribute it under the same terms as
 perl itself.
 
 =cut
