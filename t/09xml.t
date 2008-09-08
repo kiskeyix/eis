@@ -1,11 +1,10 @@
 #!/usr/bin/perl -w
-# vi: ft=perl :
-# $Revision: 1.3 $
-# my_name < email@example.com >
+# $Revision: 0.1 $
+# Luis Mondesi <lemsx1@gmail.com>
 #
 # DESCRIPTION: A simple test script
 # Use this to test EIS::DBI.pm API
-# USAGE: ./skeleton.t
+# USAGE: ./xml.t
 # LICENSE: GPL
 use strict;
 use lib 'lib';
