@@ -1,10 +1,10 @@
 #!/usr/bin/perl -w
-# $Revision: 1.2 $
-# my_name < email@example.com >
+# $Revision: 0.1 $
+# Luis Mondesi <lemsx1@gmail.com>
 #
 # DESCRIPTION: A simple test script
 # Use this to test Config.pm API
-# USAGE: ./config.t
+# USAGE: ./template.t
 # LICENSE: GPL
 use strict;
 
@@ -23,7 +23,7 @@ use EIS::Template qw(:all);
 my $obj = EIS::Template->new();
 #$config->get_option('template_path'));
 ok(defined $obj, 'obj->new()');
-is($obj->get_option('template_path'), '/auto/www/html/eis/includes/templates','template_path key');
+is($obj->get_option('template_path'), '../includes/templates','template_path key');
 
 # test some common files
 ok($obj->output('template'=>'header.tt','vars'=>{'foo'=>'test'}),'header.tt');
