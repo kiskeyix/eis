@@ -63,12 +63,12 @@ if ($@)
 eval "use XML::LibXSLT";
 if ($@)
 {
-    croak(  "\nERROR: Could not load the XML::LibXML module.\n"
+    croak(  "\nERROR: Could not load the XML::LibXSLT module.\n"
           . "       To install this module use:\n"
           . "       perl -e shell -MCPAN\n"
-          . "       install XML::LibXML\n\n"
+          . "       install XML::LibXSLT\n\n"
           . "       On Debian just: apt-get install libxml-libxslt-perl\n"
-          . "       On RedHat/Fedora: yum install libxml-perl\n\n"
+          . "       On RedHat/Fedora: yum install libxslt-perl\n\n"
           . "       Bailing out!\n\n");
     exit 1;    # never reaches this
 }
