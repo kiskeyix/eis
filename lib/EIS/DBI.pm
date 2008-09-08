@@ -93,23 +93,16 @@ sub _define
 
 my $config = EIS::Config->new('config_file' => "/etc/eis/eis.conf");
 
-# FIXME get user/pass from config file. See set_database
-__PACKAGE__->set_db("Main",
-                    "dbi:mysql:" . $config->get_option("db_name"),
+#"dbi:mysql:" . $config->get_option("db_name") . "\@" . $config->get_option("db_host")
+__PACKAGE__->set_db(
+                    "Main",
+                    "dbi:mysql:database="
+                      . $config->get_option("db_name")
+                      . ";host="
+                      . $config->get_option("db_host"),
                     $config->get_option("db_user"),
-                    $config->get_option("db_pw"));
-
-#sub set_database
-#{
-#    my $self = shift;
-#
-#    __PACKAGE__->set_db(
-#        "Main",
-#        "dbi:mysql:".$self->get_option("db_name"),
-#        $self->get_option("db_user"),
-#        $self->get_option("db_pw")
-#    );
-#}
+                    $config->get_option("db_pw")
+                   );
 
 =pod
 
