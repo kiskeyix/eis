@@ -254,12 +254,14 @@ sub setup_db
     my $database = $self->get_option('db_name');
     my $user     = $self->get_option('db_user');
     my $password = $self->get_option('db_pw');
+    my $host     = $self->get_option('db_host');# or "localhost" ?
 
     print "Database:\t$database\n";
     print "User:\t\t$user\n";
-    print "Password:\t****\n\n";    #$password;
+    print "Password:\t****\n";    #$password;
+    print "Host:\t\t$host\n\n";
 
-    my $dsn = "dbi:mysql:eis";
+    my $dsn = "dbi:mysql:$database;host=$host";
     my $dbh =
       DBI->connect($dsn, $user, $password, {RaiseError => 1, AutoCommit => 0});
 
