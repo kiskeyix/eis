@@ -26,7 +26,7 @@ $obj->get_all_options("hello world");
 
 =head1 DESCRIPTION 
 
-Teis module ...
+this module ...
 
 =head1 FUNCTIONS
 
@@ -47,7 +47,7 @@ require Exporter;
 # inherit functions from these packages:
 our @ISA = qw ( Exporter );
 
-# Teis allows declaration       use Foo::Bar ':all';
+# this allows declaration       use Foo::Bar ':all';
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
 our %EXPORT_TAGS = (
@@ -135,6 +135,7 @@ sub _define
         'db_pw',
         'db_host',
         'db_usesocket',
+        'ldap_type',
         'ldap_base',
         'ldap_host',
         'ldap_port',

@@ -1,8 +1,8 @@
 #!/usr/bin/perl -w
-# $Revision: 1.10 $
+# $Revision: 1.11 $
 # Luis Mondesi <lemsx1@gmail.com>
 #
-# DESCRIPTION: A simple package that authenticates agains Active Directory using Net::LDAP
+# DESCRIPTION: A simple package that authenticates against Active Directory, or another rfc2307-compliant LDAP server, using Net::LDAP
 # USAGE: see SYNOPSIS
 # CONVENTIONS:
 #               - functions starting with underscores (_) are local,
@@ -26,7 +26,7 @@ $obj->connect($user,$password); # returns 0 if false, N > 0 if true
 
 =head1 DESCRIPTION 
 
-Teis module inherits from EIS::Config. The purpose is to connect to an Active Directory server and validate the account
+This module inherits from EIS::Config. The purpose is to connect to an LDAP server and validate the account
 
 =head1 FUNCTIONS
 
@@ -46,11 +46,12 @@ use EIS::Tables::User;
 
 require Exporter;
 require EIS::Config;
+require EIS::Debug;
 
 # inherit functions from these packages:
-our @ISA = qw( Exporter EIS::Config );
+our @ISA = qw( Exporter EIS::Config EIS::Debug );
 
-# Teis allows declaration       use Foo::Bar ':all';
+# This allows declaration       use Foo::Bar ':all';
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
 our %EXPORT_TAGS = (
@@ -76,7 +77,7 @@ our $VERSION = '0.02';
 
 =item new()
 
-@desc allows new objects to be created and blessed. this allows for inheritance
+@desc allows new objects to be created and blessed. This allows for inheritance
 
 @arg anonymous hash. Possible values:
      
@@ -117,12 +118,26 @@ sub _define
         $self->$meth(@_) if $class->can("_define");
     }
 
+    # 1. we need to know the type of directory so we can choose the defaults for it:
+    unless (exists $self->{'ldap_type'})
+    {
+        $self->{'ldap_type'} = $self->get_option('ldap_type');
+        if (not $self->{'ldap_type'})
+        {
+            croak("LDAP type missing\n");
+        }
+    }
+
+    #
     unless (exists $self->{'ldap_domain'})
     {
         $self->{'ldap_domain'} = $self->get_option('ldap_domain');
         if (not $self->{'ldap_domain'})
         {
-            croak("Active Directory domain missing\n");
+
+            # we only need to stop if we are using AD (which is the default)
+            croak("Active Directory domain missing\n")
+              if ($self->{'ldap_domain'} eq "AD");
         }
     }
 }
@@ -183,7 +198,18 @@ sub search
 
     # if they dont pass an array of attributes...
     # set up something for them
-    if (!$attrs) { $attrs = ['cn', 'mail', 'sAMAccountName']; }
+    if (!$attrs)
+    {
+        if ($self->get_option('ldap_base') ne "AD")
+        {
+            $attrs = ['cn', 'mail', 'uid'];
+        } else {
+            $attrs = ['cn', 'mail', 'sAMAccountName'];
+        }
+    }
+    $self->Debug("EIS::Auth::connect() attrs",join(', ',@$attrs));
+
+    $self->Debug("EIS::Auth::search",$self->get_option('ldap_base'));
     my $result =
       $ldap->search(
                     'base'   => $_base,
@@ -200,7 +226,7 @@ sub search
 
 @desc function to establish a connection to a Active Directory (LDAP) server
 
-@param $user user portion of the authentication string. Teis does not include '@'+ldap_domain. We will get this from from EIS::Config
+@param $user user portion of the authentication string. This does not include '@'+ldap_domain. We will get this from from EIS::Config
 
 @param $password plain text password to use
 
@@ -216,17 +242,42 @@ sub connect
     return 0
       if (not ref $self or not defined $user or not defined $password);
 
-    my $_domain      = $self->get_option('ldap_domain');
-    my $_ldap_server = $self->get_option('ldap_host');
-    my $_ldap_port   = $self->get_option('ldap_port') || '389';
+    my $_domain =
+      ($self->{'ldap_domain'})
+      ? $self->{'ldap_domain'}
+      : $self->get_option('ldap_domain');
 
+    $self->Debug("EIS::Auth::connect() domain",$_domain);
+
+    my $_ldap_server = $self->get_option('ldap_host');
+
+    # AD is our default, but here we use port 389 because mostly all LDAP servers use this
+    my $_ldap_port = $self->get_option('ldap_port') || '389';
+    my $_ldap_base = $self->get_option('ldap_base');
+    if (not $self->{'ldap_type'} eq "AD")
+    {
+
+        # we need to make sure we have a base or there is no point in continuing
+        croak("ldap_base missing in configuration file (eis.conf)\n")
+          if (not $_ldap_base);
+    }
     my $ldap = Net::LDAP->new($_ldap_server, 'version' => 3);
     unless ($ldap)
     {
+        $self->Debug("EIS::Auth::connect() could not connect");
+
         return 0;
     }
+    $self->Debug("EIS::Auth::connect() connection open");
+
+    my $_dn =
+      ($self->{'ldap_type'} ne "AD")
+      ? "uid=$user,$_ldap_base"
+      : "$user\@$_domain";
+
+    $self->Debug("EIS::Auth::connect() dn",$_dn);
     my $bind_mesg = $ldap->bind(
-                                'dn'       => "$user\@$_domain",
+                                'dn'       => $_dn,
                                 'password' => $password,
                                 'version'  => '3',
                                 'port'     => $_ldap_port,
@@ -236,9 +287,15 @@ sub connect
     {
 
         $self->_insert_user($user);    # helps tracking session
+        # we need to find exactly this record and nothing else:
+        my $_base_search =
+          ($self->{'ldap_type'} ne "AD")
+          ? "uid=$user"
+          : "userPrincipalName=$user\@$_domain";
 
-        my $result_search =
-          $self->search($ldap, "userPrincipalName=$user\@$_domain");
+        $self->Debug("EIS::Auth::connect() base_search",$_base_search);
+
+        my $result_search = $self->search($ldap, $_base_search);
         if ($result_search->count() >= 1)
         {
             my @entries = $result_search->entries;
@@ -266,6 +323,8 @@ sub _insert_user
 
     if (!defined($uid))
     {
+        $self->Debug("EIS::Auth::_insert_user() inserting to SQL",$uid);
+
         EIS::Tables::User->insert({'uname' => $user});
     }
 }
@@ -275,6 +334,8 @@ sub _close_ldap
     my $self = shift;
     my $ldap = shift;
     return undef if (not ref $self or not defined $ldap);
+
+    $self->Debug("EIS::Auth::_close_ldap() closing connection");
 
     $ldap->unbind();
     $ldap->disconnect();
