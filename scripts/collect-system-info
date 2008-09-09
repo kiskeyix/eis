@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Revision: 1.47 $
+# $Revision: 1.48 $
 # $Date: 2007/04/13 18:47:09 $
 # Luis Mondesi < lemsx1@gmail.com >
 #
@@ -187,7 +187,6 @@ foreach my $HOST ($HOST, @ARGV)
         if ($HOST !~ /^localhost/i
             and _short_hostname($HOST) ne _short_hostname(hostname()))
         {
-
             # TODO prompt before generating a key
             # generate RSA keys if none found. I don't care about people who use DSA :-P
             system("ssh-keygen -t rsa -b 1024")
@@ -341,7 +340,7 @@ foreach my $HOST ($HOST, @ARGV)
 
         $_hw_str = _clean_xml($_hw_str);
 
-        open(HW, ">" . _short_hostname($HOST) . "-hardware.xml");
+        open(HW, ">$tmp_dir/" . _short_hostname($HOST) . "-hardware.xml");
         print HW ($_hw_str);
         close(HW);
        
@@ -371,16 +370,16 @@ foreach my $HOST ($HOST, @ARGV)
         {
             die("What is this $OS?\n");
         }
-        open(SW, ">" . _short_hostname($HOST) . "-software.xml");
+        open(SW, ">$tmp_dir/" . _short_hostname($HOST) . "-software.xml");
         print SW ($_sw_xml);
         close(SW);
 
         # 4. collect service information
-        my $_sr_str = send_cmd($HOST, "netstat -nptul");
+        my $_sr_str = send_cmd($HOST, "$SUDO netstat -nptul");
         if ($_sr_str)
         {
             my $_sr_xml = _netstat_to_xml($HOST, $_sr_str);
-            open(SR, ">" . _short_hostname($HOST) . "-service.xml");
+            open(SR, ">$tmp_dir/" . _short_hostname($HOST) . "-service.xml");
             print SR ($_sr_xml);
             close(SR);
         }
