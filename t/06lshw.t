@@ -24,7 +24,7 @@ is($obj->get_option('config_file'),
 
 # create a new hash key
 #is($obj->{'dummy'}, 'dummy_value', "dummy == dummy_value");
-is($obj->get_option('site_name'), 'EIS', 'default site_name option');
+is($obj->get_option('site_name'), 'Enterprise Inventory System', 'default site_name option');
 is($obj->get_option('template_path'),
     '../includes/templates',
     'default template_path option');
