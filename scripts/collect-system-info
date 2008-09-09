@@ -187,11 +187,6 @@ foreach my $HOST ($HOST, @ARGV)
         if ($HOST !~ /^localhost/i
             and _short_hostname($HOST) ne _short_hostname(hostname()))
         {
-            # TODO prompt before generating a key
-            # generate RSA keys if none found. I don't care about people who use DSA :-P
-            system("ssh-keygen -t rsa -b 1024")
-              if (    !-f "$ENV{'HOME'}/.ssh/id_rsa.pub"
-                  and !-f $PG_KEY);
 
             # attempts to use ssh-agent to load our keys
             # setup SSH
@@ -207,6 +202,12 @@ foreach my $HOST ($HOST, @ARGV)
             $_ssh_id = system("ssh-add -l > /dev/null");
             if ($_ssh_id != 0)
             {
+
+                # generate RSA keys if none found. I don't care about people who use DSA :-P
+                system("ssh-keygen -t rsa -b 1024")
+                  if (    !-f "$ENV{'HOME'}/.ssh/id_rsa.pub"
+                      and !-f $PG_KEY);
+
                 system("ssh-add $PG_KEY")
                   ;    # if $PG_KEY is blank ssh-add adds all private keys
                 if ($? != 0)
@@ -255,6 +256,7 @@ foreach my $HOST ($HOST, @ARGV)
         my $_os_id = send_cmd($HOST, "lsb_release -i");
         if ($? == 0)
         {
+            print STDOUT "Using OS ID from LSB: $_os_id\n" if ($VERBOSE);
             $OS = _short_os_name($_os_id);
         }
         else
@@ -288,8 +290,9 @@ foreach my $HOST ($HOST, @ARGV)
         # 2. collect hardware information
         my $tmp_dir = "/tmp";
         send_cmd($HOST, "test -d $tmp_dir || mkdir $tmp_dir 2> /dev/null");
-
-        send_cmd($HOST, "which lshw > /dev/null 2>&1");
+        # TODO on Redhat/Centos lshw is installed under /usr/sbin if using DAG rpm's
+        # fix the path using a better method
+        send_cmd($HOST, "PATH=\$PATH:/usr/sbin which lshw > /dev/null 2>&1");
         my $_lshw_path = "";
 
         if ($? != 0)
@@ -323,7 +326,8 @@ foreach my $HOST ($HOST, @ARGV)
         }
 
         # TODO we need to test whether we can do sudo commands without being prompted or a password!
-        my $_old_username = $USERNAME; # needed because we have problems with Suse
+        my $_old_username =
+          $USERNAME;    # needed because we have problems with Suse
         if ($OS eq "Suse")
         {
             print STDERR (
@@ -334,7 +338,7 @@ foreach my $HOST ($HOST, @ARGV)
             print STDERR ("Press CTRL+C to exit if something goes wrong...\n");
         }
         my $_hw_str =
-          send_cmd($HOST, "$SUDO ${_lshw_path}lshw -xml 2> /dev/null");
+          send_cmd($HOST, "PATH=\$PATH:/usr/sbin $SUDO ${_lshw_path}lshw -xml 2> /dev/null");
         _exit_safe(1, "Could not collect hardware information\n")
           if (!$_hw_str);
 
@@ -343,7 +347,7 @@ foreach my $HOST ($HOST, @ARGV)
         open(HW, ">$tmp_dir/" . _short_hostname($HOST) . "-hardware.xml");
         print HW ($_hw_str);
         close(HW);
-       
+
         # restore username
         if ($OS eq "Suse")
         {
@@ -661,17 +665,9 @@ sub _short_os_name
 {
     my $str = shift;
     my $OS  = "unknown";
-    if ($str =~ /Fedora Core release/mig)
-    {
-        $OS = "Fedora";
-    }
-    elsif ($str =~ /Red Hat .* Linux .* release/mig)
+    if ($str =~ /Fedora|Red Hat|CentOS/mig)
     {
         $OS = "Redhat";
-    }
-    elsif ($str =~ /CentOS release/mig)
-    {
-        $OS = "Centos";
     }
     elsif ($str =~ /SUSE/mig)
     {
@@ -680,6 +676,11 @@ sub _short_os_name
     elsif ($str =~ /Ubuntu|Xandros|Debian/mig)
     {
         $OS = "Debian";
+    }
+    else
+    {
+        my @ary = split(/: /, $str);
+        $OS = $ary[1];
     }
     return $OS;
 }
@@ -692,16 +693,18 @@ sub _short_os_name
 # <foo>foo text</foo>
 sub _clean_xml
 {
-    my $xml = shift;
+    my $xml  = shift;
     my @_ret = ();
-    foreach(split(/\n|\r/,$xml))
+    foreach (split(/\n|\r/, $xml))
     {
-        next if /^\s*$/; # skip blank lines
-        next if $_ !~ /^\s*<.*$/; # skip lines not starting with xml opening tag <
-        $_ =~ s/[^[:print:]]//g;  # sometimes binary data is included in lshw output
-        push(@_ret,$_);
+        next if /^\s*$/;    # skip blank lines
+        next
+          if $_ !~ /^\s*<.*$/;  # skip lines not starting with xml opening tag <
+        $_ =~
+          s/[^[:print:]]//g;  # sometimes binary data is included in lshw output
+        push(@_ret, $_);
     }
-    return(join("\n",@_ret))
+    return (join("\n", @_ret));
 }
 
 __END__
