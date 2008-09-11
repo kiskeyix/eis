@@ -22,7 +22,7 @@ It allows systems to be linked with others and keeps track of the applications r
   - sudo apt-get install git-core
   - cd /usr/src; git clone git://git.kiskeyix.org/git/eis
   - cd eis
-  - sudo apt-get install libapache2-mod-perl2 libtemplate-perl libclass-dbi-mysql-perl libnet-ldap-perl libxml-libxml-perl libdigest-md5-perl libxml-xslt-perl
+  - sudo apt-get install libapache2-mod-perl2 libtemplate-perl libclass-dbi-mysql-perl libnet-ldap-perl libxml-libxml-perl libdigest-md5-perl libxml-libxslt-perl
   - cp etc/cron.d/eis /etc/cron.d/eis
   - cp -r etc/eis /etc/eis
   - cp etc/apache/conf.d/apache-eis.conf /etc/apache2/conf.d/
