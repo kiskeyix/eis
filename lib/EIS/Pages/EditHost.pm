@@ -14,6 +14,7 @@ $|++;
 
 use EIS::Template qw( :all );
 use EIS::SessionManager qw( :all );
+use EIS::Tables::Log;
 
 use CGI;
 use Apache2::Connection ();
