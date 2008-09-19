@@ -14,6 +14,7 @@ $|++;
 
 use EIS::Tables::Location;
 use EIS::Tables::Locbyparent;
+use EIS::Tables::Log;
 
 use EIS::Template qw( :all );
 use EIS::SessionManager qw( :all );
