@@ -3,7 +3,7 @@
 # $Date: 2007-03-01 21:41:46 $
 # Luis Mondesi <lemsx1@gmail.com>
 #
-# DESCRIPTION: Teis is a simple script to import all files from /var/lib/eis into the Hardware Inventory System (EIS) database
+# DESCRIPTION: This is a simple script to import all files from /var/lib/eis into the Hardware Inventory System (EIS) database
 # USAGE:
 # LICENSE: GPL
 

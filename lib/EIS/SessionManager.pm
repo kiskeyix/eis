@@ -21,7 +21,7 @@ require Exporter;
 # inherit functions from these packages:
 our @ISA = qw( Exporter );
 
-# Teis allows declaration       use Foo::Bar ':all';
+# This allows declaration       use Foo::Bar ':all';
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
 our %EXPORT_TAGS = (
@@ -52,8 +52,8 @@ our $VERSION = '0.02';
 
 @arg anonymous hash. Possible values:
      
-     _request => $r # required. Teis is the Apache (mod_perl2) request object
-     _session_id => string # optional. Teis will be retrieved from a cookie or generated if not found
+     _request => $r # required. This is the Apache (mod_perl2) request object
+     _session_id => string # optional. This will be retrieved from a cookie or generated if not found
 
 @return blessed object
 

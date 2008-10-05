@@ -12,12 +12,12 @@
 #               - functions starting with c_ at like setters/getters for our configurable
 #                 properties
 # LICENSE: GPL
-#    Teis program is free software; you can redistribute it and/or modify
+#    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation; either version 2 of the License, or
 #    (at your option) any later version.
 #
-#    Teis program is distributed in the hope that it will be useful,
+#    This program is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #    GNU General Public License for more details.
@@ -60,7 +60,7 @@ require Exporter;
 
 our @ISA = qw(Exporter);
 
-# Teis allows declaration       use Foo::Bar ':all';
+# This allows declaration       use Foo::Bar ':all';
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
 our %EXPORT_TAGS = (

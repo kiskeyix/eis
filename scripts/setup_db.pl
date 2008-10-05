@@ -15,7 +15,7 @@ skeleton.pl - skeleton script for Perl
 
 =head1 DESCRIPTION 
 
-    Teis script ...
+    This script ...
 
 =cut
 

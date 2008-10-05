@@ -48,7 +48,7 @@ use base "Class::DBI::mysql";
 # inherit functions from these packages:
 our @ISA = qw( Exporter Class::DBI::mysql EIS::Config EIS::Debug );
 
-# Teis allows declaration       use Foo::Bar ':all';
+# This allows declaration       use Foo::Bar ':all';
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
 our %EXPORT_TAGS = (

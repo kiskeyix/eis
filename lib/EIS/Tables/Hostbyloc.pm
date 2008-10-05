@@ -16,7 +16,7 @@
 #    methods/variables from base classes. All you need to do really
 #    is add the module names to 'our @ISA = qw()' and all the methods
 #    exported by that module will be accessible.
-#    Teis creates the problem, then, that if you have 2 classes created
+#    This creates the problem, then, that if you have 2 classes created
 #    by this file with the set_option/get_option (which have the same
 #    name), these will be seen by Perl as "redefined" and an error will
 #    be croak'd. To fix this glitch simply substitute "our" with "my"

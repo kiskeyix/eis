@@ -3,7 +3,7 @@
 # $Date: 2007/05/03 20:37:08 $
 # Luis Mondesi <lemsx1@gmail.com>
 #
-# DESCRIPTION: Teis script imports an XML file to the database where Hardware Inventory System (EIS) is kept. It will attempt to deduce some strings from the XML file.
+# DESCRIPTION: This script imports an XML file to the database where Hardware Inventory System (EIS) is kept. It will attempt to deduce some strings from the XML file.
 # USAGE: $0 file.xml
 # LICENSE: GPL
 
@@ -15,7 +15,7 @@ eis-import-file - script to import file content into various tables in EIS
 
 =head1 DESCRIPTION 
 
-    Teis script imports an XML file to the database where Hardware Inventory System (EIS) is kept. It will attempt to deduce some strings from the XML file content and its name.
+    This script imports an XML file to the database where Hardware Inventory System (EIS) is kept. It will attempt to deduce some strings from the XML file content and its name.
 
     The XML file is assumed to have the following format:
 
