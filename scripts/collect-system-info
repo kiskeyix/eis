@@ -308,7 +308,7 @@ foreach my $HOST ($HOST, @ARGV)
 
         # TODO on Redhat/Centos lshw is installed under /usr/sbin if using DAG rpm's
         # fix the path using a better method
-        my $_lshw_path = send_cmd($HOST, "command -v lshw");
+        my $_lshw_path = ($OS eq 'SunOS') ? send_cmd($HOST, "command -v lshw") : send_cmd($HOST, "which lshw");
         chomp($_lshw_path);
 
         if ($? != 0)
