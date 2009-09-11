@@ -96,8 +96,10 @@ use Sys::Hostname qw/ hostname /;
 
 # globals:
 my %hosts = ();
-my @lsb_release =
-  ("/etc/redhat-release", "/etc/lsb-release", "/etc/debian_version");
+my @os_release = (
+                  "/etc/lsb-release",    "/etc/redhat-release",
+                  "/etc/debian_version", "/etc/release"
+                 );
 
 # Args:
 my $PVERSION = 0;
@@ -261,7 +263,7 @@ foreach my $HOST ($HOST, @ARGV)
         }
         else
         {
-            foreach my $file (@lsb_release)
+            foreach my $file (@os_release)
             {
 
                 # TODO use lsb_release to know the system distro
@@ -290,6 +292,7 @@ foreach my $HOST ($HOST, @ARGV)
         # 2. collect hardware information
         my $tmp_dir = "/tmp";
         send_cmd($HOST, "test -d $tmp_dir || mkdir $tmp_dir 2> /dev/null");
+
         # TODO on Redhat/Centos lshw is installed under /usr/sbin if using DAG rpm's
         # fix the path using a better method
         send_cmd($HOST, "PATH=\$PATH:/usr/sbin which lshw > /dev/null 2>&1");
@@ -337,8 +340,8 @@ foreach my $HOST ($HOST, @ARGV)
             $USERNAME = "";
             print STDERR ("Press CTRL+C to exit if something goes wrong...\n");
         }
-        my $_hw_str =
-          send_cmd($HOST, "PATH=\$PATH:/usr/sbin $SUDO ${_lshw_path}lshw -xml 2> /dev/null");
+        my $_hw_str = send_cmd($HOST,
+             "PATH=\$PATH:/usr/sbin $SUDO ${_lshw_path}lshw -xml 2> /dev/null");
         _exit_safe(1, "Could not collect hardware information\n")
           if (!$_hw_str);
 
@@ -491,12 +494,18 @@ sub send_cmd
     my $cmd  = shift;
     return undef if (not defined $host or not defined $cmd);
 
-    # -t forces pseudo terminal (pty)
-    my $_cmd =
-      ($host ne 'localhost'
+    my $_cmd = $cmd;
+    if ($host ne 'localhost'
         and _short_hostname($host) ne _short_hostname(hostname()))
-      ? "ssh -nqt ${USERNAME}${host} $cmd 2>&1"
-      : $cmd;
+    {
+
+        # -t forces pseudo terminal (pty)
+        $_cmd = "ssh -nqt ${USERNAME}${host} $cmd 2>&1";
+    }
+    else
+    {
+        $_cmd = "false" if (!-x $cmd);
+    }
     print STDOUT ("$_cmd\n") if ($VERBOSE);
     my $str = qx/$_cmd/;
     if ($? != 0)
