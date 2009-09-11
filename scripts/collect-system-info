@@ -83,7 +83,7 @@ use sigtrap qw(handler _exit_safe normal-signals error-signals);
 
 my $revision = "1.0";    # version
 
-$ENV{PATH} .= ":/usr/sbin:/usr/local/sbin";
+$ENV{PATH} .= ":/usr/sbin:/usr/local/sbin:/usr/sfw/bin:/opt/csw/bin";
 
 # standard Perl modules
 use Getopt::Long;
@@ -97,8 +97,8 @@ use Sys::Hostname qw/ hostname /;
 # globals:
 my %hosts = ();
 my @os_release = (
-                  "/etc/lsb-release",    "/etc/redhat-release",
-                  "/etc/debian_version", "/etc/release"
+                  "/etc/release",        "/etc/lsb-release",
+                  "/etc/redhat-release", "/etc/debian_version"
                  );
 
 # Args:
@@ -255,26 +255,39 @@ foreach my $HOST ($HOST, @ARGV)
         }
 
         # 1. what OS is this host running?
-        my $_os_id = send_cmd($HOST, "lsb_release -i");
-        if ($? == 0)
+        my $_nix = send_cmd($HOST, 'uname');    # Linux or SunOS
+        chomp($_nix);
+        if ($_nix eq 'Linux')
         {
-            print STDOUT "Using OS ID from LSB: $_os_id\n" if ($VERBOSE);
-            $OS = _short_os_name($_os_id);
+            my $_os_id = send_cmd($HOST, "lsb_release -i");
+            if ($? == 0)
+            {
+                print STDOUT "Using OS ID from LSB: $_os_id\n" if ($VERBOSE);
+                $OS = _short_os_name($_os_id);
+            }
+            else
+            {
+                foreach my $file (@os_release)
+                {
+
+                    # TODO use lsb_release to know the system distro
+                    my $output = send_cmd($HOST, "cat $file 2>&1");
+                    next
+                      if (!defined($output)
+                          or $output =~ /^\s*$|.*No such file.*/mig);
+                    $OS = _short_os_name($output);
+                    last
+                      if ($OS ne "unknown");
+                }
+            }
+        }
+        elsif ($_nix eq 'SunOS')
+        {
+            $OS = $_nix;    # we only have 1 way to do Solaris
         }
         else
         {
-            foreach my $file (@os_release)
-            {
-
-                # TODO use lsb_release to know the system distro
-                my $output = send_cmd($HOST, "cat $file 2>&1");
-                next
-                  if (!defined($output)
-                      or $output =~ /^\s*$|.*No such file.*/mig);
-                $OS = _short_os_name($output);
-                last
-                  if ($OS ne "unknown");
-            }
+            $OS = "unknown";
         }
 
         # get the architecture of the remove host:
@@ -295,8 +308,8 @@ foreach my $HOST ($HOST, @ARGV)
 
         # TODO on Redhat/Centos lshw is installed under /usr/sbin if using DAG rpm's
         # fix the path using a better method
-        send_cmd($HOST, "PATH=\$PATH:/usr/sbin which lshw > /dev/null 2>&1");
-        my $_lshw_path = "";
+        my $_lshw_path = send_cmd($HOST, "command -v lshw");
+        chomp($_lshw_path);
 
         if ($? != 0)
         {
@@ -309,22 +322,40 @@ foreach my $HOST ($HOST, @ARGV)
                 my $_arch =
                   ($ARCH =~ /i\d86/ or $ARCH =~ /86_64/) ? "ix86" : $ARCH;
 
-                # good, we are going to a remote host. Check whether there is a local
-                # copy of lshw that can be used remotely
-                _exit_safe(
-                    1,
-                    "Remote host does not have lshw installed and we can't copy our local copy from ./bin/lshw-static.linux.$_arch.gz\n"
-                ) if (!-f "bin/lshw-static.linux.$_arch.gz");
-
                 # copy our local binary to the remote host
-                system(
-                    "zcat bin/lshw-static.linux.$_arch.gz | ssh ${USERNAME}${HOST} 'cat - > $tmp_dir/lshw; chmod a+rx $tmp_dir/lshw'"
-                );
-                _exit_safe(1, "Could not copy bin/lshw to $HOST\n")
+                my $_local_lshw = undef;
+                if ($OS ne 'SunOS')
+                {
+                    $_local_lshw = "bin/lshw-static.linux.$_arch.gz";
+
+                    # check whether there is a local copy of lshw that can be used remotely
+                    _exit_safe(
+                        1,
+                        "Remote host does not have lshw installed and we can't copy our local copy from $_local_lshw\n"
+                    ) if (!-f $_local_lshw);
+
+                    system(
+                        "zcat $_local_lshw | ssh ${USERNAME}${HOST} 'cat - > $tmp_dir/lshw; chmod a+rx $tmp_dir/lshw'"
+                    );
+                }
+                elsif ($OS eq 'SunOS')
+                {
+                    $_local_lshw = "bin/lshw-solaris";
+
+                    # check whether there is a local copy of lshw that can be used remotely
+                    _exit_safe(
+                        1,
+                        "Remote host does not have lshw installed and we can't copy our local copy from $_local_lshw\n"
+                    ) if (!-f $_local_lshw);
+                    system(
+                        "cat $_local_lshw  | ssh ${USERNAME}${HOST} 'cat - > $tmp_dir/lshw; chmod a+rx $tmp_dir/lshw'"
+                    );
+                }
+                _exit_safe(1, "Could not copy $_local_lshw to $HOST\n")
                   if ($? != 0);
 
                 # use lshw from new path
-                $_lshw_path = "$tmp_dir/";
+                $_lshw_path = "$tmp_dir/lshw";
             }
         }
 
@@ -340,8 +371,11 @@ foreach my $HOST ($HOST, @ARGV)
             $USERNAME = "";
             print STDERR ("Press CTRL+C to exit if something goes wrong...\n");
         }
-        my $_hw_str = send_cmd($HOST,
-             "PATH=\$PATH:/usr/sbin $SUDO ${_lshw_path}lshw -xml 2> /dev/null");
+        elsif ($OS eq "SunOS")
+        {
+            $SUDO = "pfexec ";
+        }
+        my $_hw_str = send_cmd($HOST, "$SUDO ${_lshw_path} -xml 2> /dev/null");
         _exit_safe(1, "Could not collect hardware information\n")
           if (!$_hw_str);
 
@@ -359,7 +393,17 @@ foreach my $HOST ($HOST, @ARGV)
 
         # 3. collect software information
         my $_sw_xml = "";
-        if ($OS ne "Debian")    # TODO and we use RPMs
+        if ($OS eq "SunOS")
+        {
+            my $_sw_str = send_cmd($HOST, "pkginfo -i");
+            $_sw_xml = _software_to_xml($HOST, 'pkg', $_sw_str);
+        }
+        elsif ($OS eq "Debian")
+        {
+            my $_sw_str = send_cmd($HOST, "dpkg --list | grep 'ii'");
+            $_sw_xml = _software_to_xml($HOST, 'dpkg', $_sw_str);
+        }
+        elsif ($OS ne "Debian")
         {
             my $_sw_str = send_cmd($HOST,
                   "rpm -qa --qf '\%{NAME}///\%{VERSION}///\%{DESCRIPTION}xxx'");
@@ -367,11 +411,6 @@ foreach my $HOST ($HOST, @ARGV)
                   "Couldn't collect software information for $HOST on $tmp_dir")
               if ($? != 0);
             $_sw_xml = _software_to_xml($HOST, 'rpm', $_sw_str);
-        }
-        elsif ($OS eq "Debian")
-        {
-            my $_sw_str = send_cmd($HOST, "dpkg --list | grep 'ii'");
-            $_sw_xml = _software_to_xml($HOST, 'dpkg', $_sw_str);
         }
         else
         {
@@ -382,10 +421,13 @@ foreach my $HOST ($HOST, @ARGV)
         close(SW);
 
         # 4. collect service information
-        my $_sr_str = send_cmd($HOST, "$SUDO netstat -nptul");
+        my $_sr_str =
+          ($OS eq 'SunOS')
+          ? send_cmd($HOST, "$SUDO netstat -na | egrep '(Idle|LISTEN)'")
+          : send_cmd($HOST, "$SUDO netstat -nptul");
         if ($_sr_str)
         {
-            my $_sr_xml = _netstat_to_xml($HOST, $_sr_str);
+            my $_sr_xml = _netstat_to_xml($OS, $HOST, $_sr_str);
             open(SR, ">$tmp_dir/" . _short_hostname($HOST) . "-service.xml");
             print SR ($_sr_xml);
             close(SR);
@@ -404,10 +446,35 @@ sub _software_to_xml
     my $host = shift;
     my $type = shift;
     my $str  = shift;
+
+    # foo ver desc
     my $_regex =
-      ($type eq 'dpkg')
-      ? '^\s*ii\s+([^[:space:]]+)\s+([^[:space:]]+)\s+(.*)\s*'
-      : '^\s*([[:print:]]+)\/\/\/([[:print:]]+)\/\/\/([[:print:]]+)';
+      '^[[:blank:]]*([^[:blank:]]+)[[:blank:]]+([^[:blank:]]+)[[:blank:]]+(.*)\s*';
+    if ($type eq 'dpkg')
+    {
+
+        #ii foo ver desc
+        $_regex =
+          '^[[:blank:]]*ii[[:blank:]]+([^[:blank:]]+)[[:blank:]]+([^[:blank:]]+)[[:blank:]]+([[:print:]]+)[[:blank:]]*';
+    }
+    elsif ($type eq 'rpm')
+    {
+
+        #foo///ver///desc
+        $_regex =
+          '^[[:blank:]]*([[:print:]]+)\/\/\/([[:print:]]+)\/\/\/([[:print:]]+)';
+    }
+    elsif ($type eq 'pkg')
+    {
+
+        #str foo desc
+        $_regex =
+          '^[[:blank:]]*[^[:blank:]]+[[:blank:]]+([[:print:]]+)[[:blank:]]+([[:print:]]+)';
+    }
+    else
+    {
+        $_regex = '^[[:blank:]]*([^[:blank:]]+)\s+([^[:blank:]]+)\s+(.*)\s*';
+    }
 
     # when running this script remotely (over ssh) the new-lines are
     # removed for some lines. We use ... as line separator instead
@@ -459,24 +526,49 @@ sub _software_to_xml
 
 sub _netstat_to_xml
 {
+    my $os   = shift;
     my $host = shift;
     my $str  = shift;
     my $_xml = "<?xml version=\"1.0\" standalone=\"yes\" ?>";
     $_xml .= "<node id=\"" . _short_hostname($host) . "\">";
-    foreach my $line (split(/\n/, $str))
+    if ($os eq 'SunOS')
     {
-        chomp($line);
-        $line =~ s/\r//;
-        if ($line =~
-            /(tcp\d*|udp\d*)\s+\d+\s+\d+\s+([0-9\.\:\*]+)\s+(?:[0-9\.\:\*]+)\s+(?:LISTEN)*\s+([^[:space:]]+)\s*/
-           )
+        foreach my $line (split(/\n/, $str))
         {
-            my @_service = split(/:+/, $2);    # fixes IPv6 :::N
-            $_xml .=
-              "<service id='$_service[-1]'><proto>$1</proto><listenip>$2</listenip><program>$3</program></service>";
+            chomp($line);
+            $line =~ s/\r//;
+            if ($line =~
+                /^[[:blank:]]*([^[:blank:]\.]+)[[:blank:]]*Idle.*/
+            )
+            {
+                my @_service = split(/\./, $1);
+                $_xml .=
+                "<service id='${_service[-1]}'><proto>udp</proto><listenip>$1</listenip><program>UNKNOWN</program></service>";
+            } elsif ($line =~ /^[[:blank:]]*([^[:blank:]]+).+LISTEN/
+) {
+                my @_service = split(/\./, $1);
+                $_xml .=
+                "<service id='${_service[-1]}'><proto>tcp</proto><listenip>$1</listenip><program>UNKNOWN</program></service>";
+
+            }
         }
+        $_xml .= "</node>";
+    } else {
+        foreach my $line (split(/\n/, $str))
+        {
+            chomp($line);
+            $line =~ s/\r//;
+            if ($line =~
+                /(tcp\d*|udp\d*)\s+\d+\s+\d+\s+([0-9\.\:\*]+)\s+(?:[0-9\.\:\*]+)\s+(?:LISTEN)*\s+([^[:space:]]+)\s*/
+            )
+            {
+                my @_service = split(/:+/, $2);    # fixes IPv6 :::N
+                $_xml .=
+                "<service id='$_service[-1]'><proto>$1</proto><listenip>$2</listenip><program>$3</program></service>";
+            }
+        }
+        $_xml .= "</node>";
     }
-    $_xml .= "</node>";
     return $_xml;
 }
 
@@ -504,7 +596,16 @@ sub send_cmd
     }
     else
     {
-        $_cmd = "false" if (!-x $cmd);
+        my $_local_cmd = $cmd;
+
+        # clean PATH:
+        $_local_cmd =~ s/^PATH=[^[:blank:]]+//;
+
+        # return command:
+        $_local_cmd =~ s/^\s*([^[:blank:]]+).*/$1/;
+        $_local_cmd = _which($_local_cmd);
+        debug("command name '", $_local_cmd, "'");
+        $_cmd = "false" if (!$_local_cmd or !-x $_local_cmd);
     }
     print STDOUT ("$_cmd\n") if ($VERBOSE);
     my $str = qx/$_cmd/;
@@ -686,6 +787,10 @@ sub _short_os_name
     {
         $OS = "Debian";
     }
+    elsif ($str =~ /Solaris/mig)
+    {
+        $OS = "SunOS";
+    }
     else
     {
         my @ary = split(/: /, $str);
@@ -714,6 +819,20 @@ sub _clean_xml
         push(@_ret, $_);
     }
     return (join("\n", @_ret));
+}
+
+sub _which
+{
+    my @_path = split(/:/, $ENV{'PATH'});
+    foreach my $_exec (@_)
+    {
+        foreach my $_path (@_path)
+        {
+            my $_full_path = File::Spec->catfile($_path, $_exec);
+            return $_full_path if (-x $_full_path);
+        }
+    }
+    return undef;
 }
 
 __END__

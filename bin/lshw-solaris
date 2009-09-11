@@ -30,7 +30,8 @@ require 'rdoc/usage'
 
 opts = GetoptLong.new(
 [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
-[ '--usage', '-U', '-?', GetoptLong::NO_ARGUMENT ]
+[ '--usage', '-U', '-?', GetoptLong::NO_ARGUMENT ],
+[ '--xml', '-x', '-m', '-l', GetoptLong::NO_ARGUMENT ]
 )
 
 opts.each do |opt, arg|
