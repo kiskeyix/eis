@@ -510,7 +510,7 @@ sub _software_to_xml
                   : $_desc;
                 $_desc =~ s/\b\]\]\>\b//;    # CDATA cannot contain ']]>'
                 $_desc =~ s/^\s+|\s+$//g;    # trim spaces
-                $_ver = "UNKNOWN" if (! $_ver);
+                $_ver = "U" if (! $_ver);    # U is for unknown
                 $_xml .=
                   "<package id=\"$_pkg\"><version>$_ver</version><desc><![CDATA[$_desc]]></desc></package>\n";
             }
