@@ -467,9 +467,9 @@ sub _software_to_xml
     elsif ($type eq 'pkg')
     {
 
-        #str foo desc
+        # application CSWap2svn                        ap2_subversion - Subversion modules
         $_regex =
-          '^[[:blank:]]*[^[:blank:]]+[[:blank:]]+([[:print:]]+)[[:blank:]]+([[:print:]]+)';
+          '^[[:blank:]]*[^[:blank:]]+[[:blank:]]+([^[:blank:]]+)([[:blank:]]+)([[:blank:][:alnum:]]+)[[:blank:]]*';
     }
     else
     {
@@ -478,12 +478,11 @@ sub _software_to_xml
 
     # when running this script remotely (over ssh) the new-lines are
     # removed for some lines. We use ... as line separator instead
-    my $_split_regex = ($type eq 'dpkg') ? "\n" : 'xxx';
+    my $_split_regex = ($type eq 'rpm') ? 'xxx' : "\n";
 
     my $_xml = "<?xml version=\"1.0\" standalone=\"yes\" ?>\n";
     $_xml .= "<node id=\"" . _short_hostname($host) . "\">\n";
-
-    #my $i=0;
+    
     foreach my $line (split(/$_split_regex/, $str))
     {
         chomp($line);
@@ -499,9 +498,9 @@ sub _software_to_xml
             my $_desc = $3;
 
             $_pkg =~ s/[<>"']//g if ($_pkg);
-            $_ver =~ s/[<>"']//g if ($_ver);
+            $_ver =~ s/[<>"' ]//g if ($_ver);
 
-            if ($3)
+            if ($_desc)
             {
 
                 # limit description to 64 characters (61+...)
@@ -510,6 +509,7 @@ sub _software_to_xml
                   ? substr($_desc, 0, 61) . "..."
                   : $_desc;
                 $_desc =~ s/\b\]\]\>\b//;    # CDATA cannot contain ']]>'
+                $_ver = "UNKNOWN" if (! $_ver);
                 $_xml .=
                   "<package id=\"$_pkg\"><version>$_ver</version><desc><![CDATA[$_desc]]></desc></package>\n";
             }
