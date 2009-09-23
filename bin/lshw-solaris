@@ -59,8 +59,8 @@ tag("description","")
 tag("product","")
 tag("vendor","")
 tag("serial","")
-tag("width",32,' units="bits"')
-
+tag("width",`isainfo`.split(/[[:blank:]]+/).first.sub(/[^[:digit:]]+/,""),' units="bits"')
+#=~ /[^[:digit:]]/
 # memory
 puts "<node id=\"memory:0\" claimed=\"true\" class=\"memory\">"
 tag("description","System Memory")
