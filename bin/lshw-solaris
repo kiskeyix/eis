@@ -55,26 +55,26 @@ puts "<node id=\"#{hostname}\" claimed=\"true\" class=\"system\">"
 
 # TODO
 # use ndd/prntconf to fill these:
-tag("description","")
-tag("product","")
-tag("vendor","")
+tag("description",`cat /etc/release|head -1`.chomp.strip)
+tag("product",`uname -a`.chomp)
+tag("vendor",`uname -s`.chomp)
 tag("serial","")
-tag("width",`isainfo`.split(/[[:blank:]]+/).first.sub(/[^[:digit:]]+/,""),' units="bits"')
+tag("width",`isainfo -b`.chomp.split(/[[:blank:]]+/).first.sub(/[^[:digit:]]+/,""),' units="bits"')
 #=~ /[^[:digit:]]/
 # memory
 puts "<node id=\"memory:0\" claimed=\"true\" class=\"memory\">"
 tag("description","System Memory")
 # TODO how many slots we have? do a loop:
 slot = 0
-puts "<node id=\"bank:#{slot}\" claimed=\"true\" class=\"memory\">"
-tag("description","DIMM")
-tag("product","")
-tag("vendor","")
-tag("serial","")
-tag("size","",' units="bytes"')
-tag("width","",' units="bits"')
-tag("clock","",' units="Hz"')
-puts "</node>" # end slot
+puts "\t<node id=\"bank:#{slot}\" claimed=\"true\" class=\"memory\">"
+print "\t\t" ; tag("description","DIMM")
+print "\t\t" ; tag("product","")
+print "\t\t" ; tag("vendor","")
+print "\t\t" ; tag("serial","")
+print "\t\t" ; tag("size",`prtconf|grep Memory`.chomp.split(/:/).last.sub(/egabytes/,"").strip,' units="bytes"')
+print "\t\t" ; tag("width","",' units="bits"')
+print "\t\t" ; tag("clock","",' units="Hz"')
+puts "\t</node>" # end slot
 puts "</node>" # end memory
 
 # end
