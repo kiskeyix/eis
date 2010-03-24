@@ -114,6 +114,7 @@ my $ssh_port   = 22;
 my $HOST       = undef;
 my $USERNAME   = undef;
 my $QUIET      = 0;
+my $MODE       = 0644;
 
 # get options
 GetOptions(
@@ -129,6 +130,8 @@ GetOptions(
     # strings
     'k|key=s'      => \$PG_KEY,
     'u|username=s' => \$USERNAME,
+    # int
+    'm|mode=i'      => \$MODE,
 ) and $HOST = shift;
 
 if ($HELP)
@@ -381,9 +384,11 @@ foreach my $HOST ($HOST, @ARGV)
 
         $_hw_str = _clean_xml($_hw_str);
 
-        open(HW, ">$tmp_dir/" . _short_hostname($HOST) . "-hardware.xml");
+        my $_filename = $tmp_dir . "/" . _short_hostname($HOST) . "-hardware.xml";
+        open(HW, "> $_filename");
         print HW ($_hw_str);
         close(HW);
+        chmod oct($MODE), $_filename;
 
         # restore username
         if ($OS eq "Suse")
@@ -416,9 +421,11 @@ foreach my $HOST ($HOST, @ARGV)
         {
             die("What is this $OS?\n");
         }
-        open(SW, ">$tmp_dir/" . _short_hostname($HOST) . "-software.xml");
+        my $_software_filename = $tmp_dir . "/" . _short_hostname($HOST) . "-software.xml";
+        open(SW, "> $_software_filename");
         print SW ($_sw_xml);
         close(SW);
+        chmod oct($MODE), $_software_filename;
 
         # 4. collect service information
         my $_sr_str =
@@ -428,9 +435,12 @@ foreach my $HOST ($HOST, @ARGV)
         if ($_sr_str)
         {
             my $_sr_xml = _netstat_to_xml($OS, $HOST, $_sr_str);
-            open(SR, ">$tmp_dir/" . _short_hostname($HOST) . "-service.xml");
+
+            my $_net_xml = $tmp_dir . "/" . _short_hostname($HOST) . "-service.xml";
+            open(SR, "> $_net_xml");
             print SR ($_sr_xml);
             close(SR);
+            chmod oct($MODE), $_net_xml;
         }
     }
     else
